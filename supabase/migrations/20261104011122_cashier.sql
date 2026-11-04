@@ -1,0 +1,3 @@
+-- Cashier-specific migration.
+-- Fungsi verify_payment_cashier sudah didefinisikan di order_functions.sql.
+-- Tidak ada tabel atau fungsi tambahan yang khusus cashier pada tahap ini.

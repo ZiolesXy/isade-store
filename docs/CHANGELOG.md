@@ -51,13 +51,26 @@ Bukti verifikasi: `npm run build` selesai tanpa error TypeScript (`dist/` dibang
 
 ---
 
-## <Tanggal> - Tahap 2: Database, RLS, dan Fungsi Stok
+## 2026-11-04 - Tahap 2: Database, RLS, dan Fungsi Stok
 
-Status: belum selesai
+Status: selesai
 
 Rincian:
+- 7 migrasi dibuat dan diterapkan: profiles, products, orders, order_functions, rls_and_grants, storage, cashier (urutan benar dengan timestamp berbeda).
+- Bug ditemukan dan diperbaiki di `apply_payment_result`: status `paid` sebelumnya tidak mengurangi `stock` dan `locked_stock`, padahal kriteria penerimaan #2 menegaskan keduanya harus turun. Ditambahkan pengurangan stock dan locked_stock untuk status paid (produk digital terjual).
+- supabase/seed.sql dibuat dengan 6 produk [CONTOH], termasuk satu stok 0 dan satu stok 1.
+- supabase/tests/stock_concurrency.sql dibuat: 5/5 uji lulus (qty melebihi available_stock ditolak, pending ke-4 ditolak, idempotency key mengembalikan order_id sama, paid memotong stock+locked_stock, duplikasi tidak mengubah).
+- supabase/tests/cashier_verification.sql dibuat: 3/3 uji lulus (pending→paid, order paid read-only, non-cashier ditolak FORBIDDEN).
+- supabase start dan supabase db reset berhasil dari nol.
+- src/data/database.types.ts dihasilkan lewat supabase gen types typescript --local.
+- Grant diverifikasi: authenticated tidak boleh menjalankan create_order_atomic (permission denied).
 
 Bukti verifikasi:
+- `supabase db reset` sukses dari nol (semua 7 migrasi diterapkan terurut).
+- `stock_concurrency.sql`: 5/5 assertion lulus (NOTICE: Uji 1-5 LULUS).
+- `cashier_verification.sql`: 3/3 assertion lulus (NOTICE: Uji 1-3 LULUS).
+- `CREATE_ORDER_ATOMIC` sebagai role `authenticated`: ERROR: permission denied for function create_order_atomic.
+- `src/data/database.types.ts` terbentuk.
 
 ---
 
