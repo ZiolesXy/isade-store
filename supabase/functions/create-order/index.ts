@@ -39,7 +39,7 @@ serve(
     }
 
     // Extract JWT dari header Authorization
-    const authResult = authenticateJWT(req);
+    const authResult = await authenticateJWT(req);
     if (authResult.error) {
       return authResult.error;
     }

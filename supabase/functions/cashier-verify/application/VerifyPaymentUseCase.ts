@@ -19,12 +19,12 @@ export async function verifyPaymentCashierUseCase(
   req: Request
 ): Promise<VerifyPaymentResult> {
   // 1. Verifikasi JWT dan role
-  const authResult = authenticateJWT(req);
+  const authResult = await authenticateJWT(req);
   if (authResult.error) {
     throw new Error("UNAUTHORIZED: " + authResult.error.status);
   }
 
-  const { userId, role } = authResult.user;
+  const { id: userId, role } = authResult.user;
 
   // Hanya cashier dan admin yang boleh memanggil
   if (role !== "cashier" && role !== "admin") {
@@ -38,7 +38,7 @@ export async function verifyPaymentCashierUseCase(
   }
 
   // 3. Ambil order dari DB
-  const supabase = globalThis.supabase; // akan diinject
+  const supabase = (globalThis as any).supabase; // akan diinject
   // Untuk sekarang, panggil RPC verify_payment_cashier
 
   // 4. Cek apakah order sudah paid (read-only)

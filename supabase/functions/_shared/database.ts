@@ -7,7 +7,7 @@ export async function apply_payment_result(
   p_source: string,
   p_payload: any
 ): Promise<string> {
-  const supabase = globalThis.supabaseAdmin;
+  const supabase = (globalThis as any).supabaseAdmin;
   
   if (!supabase) {
     throw new Error("supabaseAdmin not available");
@@ -29,7 +29,7 @@ export async function apply_payment_result(
 }
 
 export async function is_cashier(): Promise<boolean> {
-  const supabase = globalThis.supabaseAuth;
+  const supabase = (globalThis as any).supabaseAuth;
   
   if (!supabase) {
     return false;

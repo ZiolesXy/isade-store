@@ -35,6 +35,7 @@ export async function handleNotificationUseCase(
   // 2. Konfirmasi status ke API Midtrans
   const config = {
     serverKey: Deno.env.get("MIDTRANS_SERVER_KEY") || "",
+    clientKey: Deno.env.get("MIDTRANS_CLIENT_KEY") || "",
     isProduction: Deno.env.get("MIDTRANS_IS_PRODUCTION") === "true",
   };
   const midtransClient = new MidtransClient(config);

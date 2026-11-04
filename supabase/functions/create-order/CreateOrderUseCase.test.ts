@@ -1,5 +1,5 @@
 // Unit test CreateOrderUseCase dengan gateway palsu
-import { CreateOrderUseCase } from "./CreateOrderUseCase.ts";
+import { CreateOrderUseCase } from "./application/CreateOrderUseCase.ts";
 import {
   CreateOrderInput,
   StockConflictError,
@@ -7,13 +7,14 @@ import {
   TooManyPendingOrdersError,
   PaymentGatewayError,
   ValidationError,
-} from "../domain/entities.ts";
+} from "./domain/entities.ts";
+import type { OrderGateway } from "./application/ports.ts";
 
 // Mock Order Gateway
 class MockOrderGateway implements OrderGateway {
   async prevalidate(items: any[]) {
     // Semua item valid
-    return { success: true };
+    return { success: true } as { success: true };
   }
   async createOrderAtomic(userId: string, items: any[], paymentMethod: string, idempotencyKey: string, ttlMinutes?: number): Promise<string> {
     return "test-order-uuid";
@@ -32,13 +33,6 @@ class MockPaymentGateway {
 }
 
 // Mock Order Gateway interface
-interface OrderGateway {
-  prevalidate: (items: any[]) => Promise<{ success: boolean; items?: any[] }>;
-  createOrderAtomic: (userId: string, items: any[], paymentMethod: string, idempotencyKey: string, ttlMinutes?: number) => Promise<string>;
-  findByIdempotencyKey: (userId: string, idempotencyKey: string) => Promise<string | null>;
-  saveSnapToken: (orderId: string, snapToken: string, redirectUrl: string) => Promise<void>;
-  markFailed: (orderId: string) => Promise<void>;
-}
 
 const mockGateway: OrderGateway = new MockOrderGateway();
 const mockPaymentGateway = new MockPaymentGateway();
@@ -54,18 +48,18 @@ Deno.test("CreateOrderUseCase: validasi input kosong", async () => {
 
   try {
     await useCase.execute("user-1", input);
-    Deno.test.fail("Harus melempar error");
+    throw new Error("Harus melempar error");
   } catch (err: any) {
     if (err instanceof ValidationError && err.message.includes("Daftar item kosong")) {
       console.log("PASS: validasi input kosong");
     } else {
-      Deno.test.fail(`Harus ValidationError, mendapat ${err.name}: ${err.message}`);
+      throw new Error(`Harus ValidationError, mendapat ${err.name}: ${err.message}`);
     }
   }
 });
 
 Deno.test("CreateOrderUseCase: too many items (>20)", async () => {
-  const items = Array(21).fill().map((_, i) => ({ product_id: `prod-${i}`, quantity: 1 }));
+  const items = Array.from({ length: 21 }, (_, i) => ({ product_id: `prod-${i}`, quantity: 1 }));
   const input: CreateOrderInput = {
     items,
     payment_method: "WEB_MIDTRANS",
@@ -74,12 +68,12 @@ Deno.test("CreateOrderUseCase: too many items (>20)", async () => {
 
   try {
     await useCase.execute("user-1", input);
-    Deno.test.fail("Harus melempar error melebihi 20 items");
+    throw new Error("Harus melempar error melebihi 20 items");
   } catch (err: any) {
     if (err instanceof ValidationError && err.message.includes("Maksimum 20 jenis produk")) {
       console.log("PASS: terlalu banyak item");
     } else {
-      Deno.test.fail(`Harus ValidationError, mendapat ${err.name}: ${err.message}`);
+      throw new Error(`Harus ValidationError, mendapat ${err.name}: ${err.message}`);
     }
   }
 });

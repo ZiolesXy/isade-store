@@ -15,7 +15,7 @@ Deno.test("verifyPaymentCashier: order pending -> paid (sebagai cashier)", async
   if (result.status === "paid" || result.status === "pending") {
     console.log("PASS: cashier verify pending -> paid, status:", result.status);
   } else {
-    Deno.test.fail(`Harus paid atau pending, mendapat ${result.status}`);
+    throw new Error(`Harus paid atau pending, mendapat ${result.status}`);
   }
 });
 
@@ -60,7 +60,7 @@ Deno.test("verifyPaymentCashier: valid result values", async () => {
     const r = await verifyPaymentCashierUseCase(
       {
         order_id: `test-order-${result}`,
-        result: result,
+        result: result as "paid" | "needs_review" | "failed" | "expired" | "cancelled",
         catatan: `Test ${result}`,
       },
       {} as Request

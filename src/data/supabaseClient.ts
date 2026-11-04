@@ -1,18 +1,14 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
-  throw new Error(
-    'VITE_SUPABASE_URL belum diatur. Isi di .env.local sesuai .env.example (PRD bagian 10.1).',
-  )
+  throw new Error('VITE_SUPABASE_URL belum diatur.');
 }
-
 if (!supabaseAnonKey) {
-  throw new Error(
-    'VITE_SUPABASE_ANON_KEY belum diatur. Isi di .env.local sesuai .env.example (PRD bagian 10.1).',
-  )
+  throw new Error('VITE_SUPABASE_ANON_KEY belum diatur.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

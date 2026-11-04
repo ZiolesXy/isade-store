@@ -13,7 +13,7 @@ Deno.test("handleNotificationUseCase: signature invalid", async () => {
   if (result.status === "rejected") {
     console.log("PASS: invalid signature rejected");
   } else {
-    Deno.test.fail(`Harus rejected, mendapat ${result.status}`);
+    throw new Error(`Harus rejected, mendapat ${result.status}`);
   }
 });
 
@@ -29,6 +29,6 @@ Deno.test("handleNotificationUseCase: function executes", async () => {
 
     console.log("PASS: handleNotificationUseCase executes, status:", result.status);
   } catch (err) {
-    Deno.test.fail(`Harus tidak throw error, mendapat: ${err}`);
+    throw new Error(`Harus tidak throw error, mendapat: ${err}`);
   }
 });

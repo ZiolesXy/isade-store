@@ -110,13 +110,34 @@ Bukti verifikasi:
 
 ---
 
-## <Tanggal> - Tahap 4: Frontend Domain, Application, dan Data
+## 2026-11-04 - Tahap 4: Frontend Domain, Application, dan Data
 
-Status: belum selesai
+Status: selesai
 
 Rincian:
+- src/domain/models: Product, CartItem, Order (union status persis DB)
+- src/domain/repositories: IProductRepository, IOrderRepository, ICheckoutGateway
+- src/domain/errors: StockConflictError, ProductUnavailableError, TooManyPendingOrdersError, PaymentGatewayError, ValidationError
+- src/application/cart.ts: addItem, setQuantity, removeItem, subtotal, reconcile (fungsi murni)
+- src/application/checkout.ts: CheckoutUseCase dengan ICheckoutGateway via constructor
+- src/application/products.ts: ListProductsUseCase, GetProductUseCase
+- src/data/mappers.ts: pemetaan Database Row ke domain model
+- src/data/supabaseClient.ts: Supabase client dengan generic Database, validasi env
+- src/data/repositories/SupabaseProductRepo.ts: implementasi IProductRepository
+- src/data/repositories/SupabaseOrderRepo.ts: implementasi IOrderRepository
+- src/data/repositories/SupabaseCheckoutGateway.ts: implementasi ICheckoutGateway via supabase.functions.invoke('create-order')
+- src/data/midtrans/snapLoader.ts: muat snap.js sekali, deklarasi window.snap
+- src/presentation/stores/useCartStore.ts: Zustand dengan persist, subtotal lewat selector
+- src/presentation/stores/useAuthStore.ts: sesi, profil, role, cek admin/cashier
+- src/presentation/hooks/useProducts.ts, useCheckout.ts, useOrder.ts, useCashier.ts
+- src/di.ts: composition root, wire semua implementasi
+- Unit test application/cart.test.ts dan checkout.test.ts dengan gateway palsu
+- database.types.ts dihasilkan ulang lewat supabase gen types --local
+
+Aturan terpenuhi: domain dan application tidak import data, presentation, React, atau Supabase.
 
 Bukti verifikasi:
+- npm run build dan npx vitest run (di bawah)
 
 ---
 

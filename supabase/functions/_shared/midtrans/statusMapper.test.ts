@@ -6,7 +6,7 @@ Deno.test("statusMapper: settlement -> paid", () => {
   if (result === "paid") {
     console.log("PASS: settlement -> paid");
   } else {
-    Deno.test.fail(`Harus paid, mendapat ${result}`);
+    throw new Error(`Harus paid, mendapat ${result}`);
   }
 });
 
@@ -15,7 +15,7 @@ Deno.test("statusMapper: expire -> expired", () => {
   if (result === "expired") {
     console.log("PASS: expire -> expired");
   } else {
-    Deno.test.fail(`Harus expired, mendapat ${result}`);
+    throw new Error(`Harus expired, mendapat ${result}`);
   }
 });
 
@@ -25,7 +25,7 @@ Deno.test("statusMapper: capture accept -> pending (di-level lanjut)", () => {
   if (result === "pending") {
     console.log("PASS: capture -> pending (lanjutan di apply_payment_result)");
   } else {
-    Deno.test.fail(`Harus pending, mendapat ${result}`);
+    throw new Error(`Harus pending, mendapat ${result}`);
   }
 });
 
@@ -34,7 +34,7 @@ Deno.test("statusMapper: capture challenge -> pending", () => {
   if (result === "pending") {
     console.log("PASS: capture challenge -> pending");
   } else {
-    Deno.test.fail(`Harus pending, mendapat ${result}`);
+    throw new Error(`Harus pending, mendapat ${result}`);
   }
 });
 
@@ -43,7 +43,7 @@ Deno.test("statusMapper: cancel -> cancelled", () => {
   if (result === "cancelled") {
     console.log("PASS: cancel -> cancelled");
   } else {
-    Deno.test.fail(`Harus cancelled, mendapat ${result}`);
+    throw new Error(`Harus cancelled, mendapat ${result}`);
   }
 });
 
@@ -52,7 +52,7 @@ Deno.test("statusMapper: deny -> failed", () => {
   if (result === "failed") {
     console.log("PASS: deny -> failed");
   } else {
-    Deno.test.fail(`Harus failed, mendapat ${result}`);
+    throw new Error(`Harus failed, mendapat ${result}`);
   }
 });
 
@@ -61,7 +61,7 @@ Deno.test("statusMapper: refund -> needs_review", () => {
   if (result === "needs_review") {
     console.log("PASS: refund -> needs_review");
   } else {
-    Deno.test.fail(`Harus needs_review, mendapat ${result}`);
+    throw new Error(`Harus needs_review, mendapat ${result}`);
   }
 });
 
@@ -70,7 +70,7 @@ Deno.test("statusMapper: failure -> failed", () => {
   if (result === "failed") {
     console.log("PASS: failure -> failed");
   } else {
-    Deno.test.fail(`Harus failed, mendapat ${result}`);
+    throw new Error(`Harus failed, mendapat ${result}`);
   }
 });
 
@@ -79,6 +79,6 @@ Deno.test("statusMapper: default -> pending", () => {
   if (result === "pending") {
     console.log("PASS: default -> pending");
   } else {
-    Deno.test.fail(`Harus pending, mendapat ${result}`);
+    throw new Error(`Harus pending, mendapat ${result}`);
   }
 });

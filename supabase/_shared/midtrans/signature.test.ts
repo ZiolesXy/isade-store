@@ -21,7 +21,7 @@ Deno.test("signature: valid signature should return true", async () => {
   if (typeof tested === "boolean") {
     console.log("PASS: verifySignature return boolean");
   } else {
-    Deno.test.fail("Harus return boolean");
+    throw new Error("Harus return boolean");
   }
 });
 
@@ -30,6 +30,6 @@ Deno.test("signature: function executes without throwing", async () => {
     await verifySignature("ord-1", "settlement", "10000.00", "key", "signature");
     console.log("PASS: verifySignature tidak throw error");
   } catch (err) {
-    Deno.test.fail(`Harus tidak throw error, mendapat: ${err}`);
+    throw new Error(`Harus tidak throw error, mendapat: ${err}`);
   }
 });

@@ -1,5 +1,5 @@
-import { OrderGateway } from "./ports";
-import { PaymentGateway } from "./ports";
+import { OrderGateway } from "./ports.ts";
+import { PaymentGateway } from "./ports.ts";
 import {
   CreateOrderInput,
   CreateOrderWebResponse,
@@ -9,7 +9,7 @@ import {
   TooManyPendingOrdersError,
   PaymentGatewayError,
   ValidationError,
-} from "../domain/entities";
+} from "../domain/entities.ts";
 
 export class CreateOrderUseCase {
   constructor(
@@ -62,7 +62,7 @@ export class CreateOrderUseCase {
 
     if (input.payment_method === "KASIR_CASH") {
       // Order Kasir Cash: tidak ada Midtrans, langsung pending
-      const totalAmount = input.items.reduce((sum, item) => {
+      const totalAmount = input.items.reduce((sum: number, item: { product_id: string; quantity: number }) => {
         // Akan diisi oleh DB saat create_order_atomic
         return sum;
       }, 0);
@@ -72,7 +72,7 @@ export class CreateOrderUseCase {
         input.items,
         input.payment_method,
         input.idempotency_key
-      ).then(orderId => ({
+      ).then((orderId: string) => ({
         order_id: orderId,
         status: "pending",
         total_amount: totalAmount,
