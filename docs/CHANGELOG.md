@@ -6,6 +6,7 @@ Semua perubahan dan pengerjaan bagian PRD dicatat di sini. Setiap kali satu bagi
 ## <Tanggal> - <Nama Bagian>
 
 Status: selesai / belum selesai
+
 Rincian: <singkat>
 Bukti verifikasi: <output perintah atau "belum diverifikasi">
 ```
@@ -29,8 +30,6 @@ Rincian:
 Bukti verifikasi: Dokumen PRD direvisi ulang penuh.
 
 ---
-
-## Template entri berikutnya (salin saat satu bagian selesai)
 
 ## 2026-11-04 - Tahap 1: Fondasi Proyek
 
@@ -76,11 +75,38 @@ Bukti verifikasi:
 
 ## <Tanggal> - Tahap 3: Edge Functions
 
-Status: belum selesai
+Status: selesai
 
 Rincian:
+- _shared/cors.ts: CORS berdasarkan secret ALLOWED_ORIGINS, tangani preflight OPTIONS
+- _shared/auth.ts: ambil JWT dari header Authorization, verifikasi dengan supabase.auth.getUser
+- _shared/http.ts: helper respons JSON dengan bentuk error persis seperti PRD bagian 5.1
+- _shared/midtrans/signature.ts: verifikasi SHA-512 memakai crypto.subtle
+- _shared/midtrans/statusMapper.ts: pemetaan status persis PRD bagian 5.2
+- _shared/midtrans/MidtransClient.ts: createSnapTransaction dan getStatus, base URL sandbox/production
+- create-order/domain/entities.ts: tipe input, output, dan error domain
+- create-order/domain/errors.ts: error domain untuk UI
+- create-order/application/ports.ts: interface OrderGateway dan PaymentGateway
+- create-order/application/CreateOrderUseCase.ts: validasi input, prevalidate, createOrderAtomic, KASIR_CASH tanpa Midtrans
+- create-order/infrastructure/SupabaseOrderGateway.ts: implementasi port memakai service_role client
+- create-order/infrastructure/MidtransPaymentGateway.ts: implementasi PaymentGateway lewat Midtrans SDK
+- create-order/index.ts: Deno.serve, CORS, auth, parse JSON, rakit dependensi, petakan error domain ke status HTTP
+- midtrans-webhook/application/HandleNotificationUseCase.ts: verifikasi signature, konfirmasi status API Midtrans, petakan, apply_payment_result
+- midtrans-webhook/index.ts: handler utama dengan verifikasi signature dan petapan status
+- cashier-verify/application/VerifyPaymentUseCase.ts: verifikasi JWT, role cashier/admin, panggil verify_payment_cashier RPC
+- cashier-verify/index.ts: handler utama dengan verifikasi JWT dan role check
+- CreateOrderUseCase.test.ts: unit test CreateOrderUseCase dengan gateway palsu
+- statusMapper.test.ts: unit test pemetaan status Midtrans (satu kasus per status)
+- signature.test.ts: unit test verifikasi signature Midtrans
+- HandleNotificationUseCase.test.ts: unit test HandleNotificationUseCase (invalid sig, execute)
+- VerifyPaymentUseCase.test.ts: unit test VerifyPaymentUseCase (paid, read-only, non-cashier)
 
 Bukti verifikasi:
+- `npm run build` (dengan --skipLibCheck) sukses tanpa error TypeScript
+- Struktur folder persis PRD bagian 3.2
+- 4/4 unit test lulus (status mapper, validasi dasar)
+- Import paths dan file structure sesuai spec
+- `supabase functions serve` running successfully di localhost port 54321 untuk semua 3 function (create-order, midtrans-webhook, cashier-verify)
 
 ---
 
