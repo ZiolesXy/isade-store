@@ -19,11 +19,12 @@ export async function handleNotificationUseCase(
   const { order_id, status_code, gross_amount, signature_key, payload } = input;
 
   // 1. Verifikasi signature
+  // gunakan server key dari environment, dan signature_key dari payload midtrans
   const isValid = await verifySignature(
     order_id,
     status_code,
     gross_amount,
-    signature_key,
+    Deno.env.get("MIDTRANS_SERVER_KEY") || "",
     String(payload.signature_key || '')
   );
 
