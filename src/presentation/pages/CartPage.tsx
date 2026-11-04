@@ -250,7 +250,7 @@ export function CartPage() {
                           size="icon"
                           aria-label={`Tambah jumlah ${item.title}`}
                           disabled={item.quantity >= maxQty}
-                          onClick={() => setQty(item.productId, item.quantity + 1)}
+                          onClick={() => setQty(item.productId, item.quantity + 1, maxQty)}
                         >
                           <Plus className="size-3.5" weight="bold" />
                         </Button>

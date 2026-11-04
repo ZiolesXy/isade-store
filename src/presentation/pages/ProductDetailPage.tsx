@@ -86,15 +86,23 @@ export function ProductDetailPage() {
 
   function handleAdd() {
     if (outOfStock) return;
-    add({
-      productId: current.id,
-      slug: current.slug,
-      title: current.title,
-      unitPrice: current.price,
-      quantity,
-      imagePath: current.imagePath,
-    });
-    toast.success('Produk ditambahkan ke keranjang.');
+    add(
+      {
+        productId: current.id,
+        slug: current.slug,
+        title: current.title,
+        unitPrice: current.price,
+        quantity,
+        imagePath: current.imagePath,
+      },
+      current.availableStock
+    );
+    const added = useCartStore.getState().items.find((i) => i.productId === current.id);
+    if (added && added.quantity < quantity) {
+      toast.warning(`Stok hanya tersisa ${current.availableStock}. Kuantitas disesuaikan.`);
+    } else {
+      toast.success('Produk ditambahkan ke keranjang.');
+    }
   }
 
   return (

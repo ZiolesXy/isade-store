@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.223.0/http/server.ts";
-import { createCORSHandler } from "../../_shared/cors.ts";
-import { authenticateJWT } from "../../_shared/auth.ts";
-import { successResponse, errorResponse } from "../../_shared/http.ts";
+import { createCORSHandler } from "../_shared/cors.ts";
+import { authenticateJWT } from "../_shared/auth.ts";
+import { successResponse, errorResponse } from "../_shared/http.ts";
 import {
   CreateOrderInput,
   CreateOrderWebResponse,
@@ -12,10 +12,12 @@ import { SupabaseOrderGateway } from "./infrastructure/SupabaseOrderGateway.ts";
 import { MidtransPaymentGateway } from "./infrastructure/MidtransPaymentGateway.ts";
 
 const MIDTRANS_SERVER_KEY = Deno.env.get("MIDTRANS_SERVER_KEY") || "";
+const MIDTRANS_CLIENT_KEY = Deno.env.get("MIDTRANS_CLIENT_KEY") || "";
 const IS_PRODUCTION = Deno.env.get("MIDTRANS_IS_PRODUCTION") === "true";
 
 const gateway = new MidtransPaymentGateway({
   serverKey: MIDTRANS_SERVER_KEY,
+  clientKey: MIDTRANS_CLIENT_KEY,
   isProduction: IS_PRODUCTION,
 });
 
@@ -44,7 +46,7 @@ serve(
       return authResult.error;
     }
 
-    const { userId, role } = authResult.user;
+    const { id: userId, role } = authResult.user;
 
     // Validasi payment_method
     if (!body.payment_method || !["WEB_MIDTRANS", "KASIR_CASH"].includes(body.payment_method)) {
@@ -73,7 +75,7 @@ serve(
         items: body.items,
         payment_method,
         idempotency_key,
-      });
+      }, { email: authResult.user.email ?? undefined });
 
       if (payment_method === "KASIR_CASH") {
         return successResponse({

@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { CreateOrderInput, CreateOrderOutput } from '../../domain/models/Order';
 import type { ICheckoutGateway } from '../../domain/repositories/ICheckoutGateway';
 import {
@@ -28,6 +29,45 @@ interface CreateOrderErrorBody {
   };
 }
 
+/** Saat HTTP status bukan 2xx, supabase-ui melempar FunctionsHttpError;
+ *  body json dengan kode domain (STOCK_CONFLICT, dll) ada di error.context. */
+async function errorBodyFromHttpError(error: unknown): Promise<CreateOrderErrorBody | null> {
+  if (!(error instanceof FunctionsHttpError)) return null;
+  try {
+    const body = (await error.context.json()) as unknown;
+    if (body && typeof body === 'object' && 'error' in body) {
+      return body as CreateOrderErrorBody;
+    }
+  } catch {
+    // body bukan json yang dikenali
+  }
+  return null;
+}
+
+function mapErrorBody(err: CreateOrderErrorBody['error']): never {
+  const items = Array.isArray(err.items) ? err.items : [];
+  switch (err.code) {
+    case 'STOCK_CONFLICT':
+      throw new StockConflictError(
+        items.map((it: any) => ({
+          productId: it.product_id,
+          requested: it.requested,
+          available: it.available,
+        }))
+      );
+    case 'PRODUCT_UNAVAILABLE':
+      throw new ProductUnavailableError(err.message);
+    case 'TOO_MANY_PENDING_ORDERS':
+      throw new TooManyPendingOrdersError();
+    case 'PAYMENT_GATEWAY_ERROR':
+      throw new PaymentGatewayError(err.message || 'Gateway pembayaran gagal');
+    case 'VALIDATION_ERROR':
+      throw new ValidationError(err.message, Object.keys(err.fields || {})[0]);
+    default:
+      throw new PaymentGatewayError(err.message || 'Terjadi kesalahan internal');
+  }
+}
+
 export class SupabaseCheckoutGateway implements ICheckoutGateway {
   async createOrder(input: CreateOrderInput): Promise<CreateOrderOutput> {
     const { data, error } = await supabase.functions.invoke<CreateOrderResponse>('create-order', {
@@ -39,6 +79,9 @@ export class SupabaseCheckoutGateway implements ICheckoutGateway {
     });
 
     if (error) {
+      // Body JSON berisi kode domain (STOCK_CONFLICT, dll) saat status 4xx/5xx.
+      const body = await errorBodyFromHttpError(error);
+      if (body) mapErrorBody(body.error);
       // Error dari invoke (network, CORS, etc)
       throw new PaymentGatewayError(error.message || 'Gagal memanggil layanan pembelian');
     }
@@ -47,31 +90,10 @@ export class SupabaseCheckoutGateway implements ICheckoutGateway {
       throw new PaymentGatewayError('Respons kosong dari server');
     }
 
-    // Jika respons adalah error JSON (4xx/5xx)
+    // Jika respons adalah error JSON (fallback, teori: status 2xx dengan body error)
     const errorBody = data as unknown as CreateOrderErrorBody;
     if (errorBody && (errorBody as any).error) {
-      const err = (errorBody as any).error;
-      const items = Array.isArray(err.items) ? err.items : [];
-      switch (err.code) {
-        case 'STOCK_CONFLICT':
-          throw new StockConflictError(
-            items.map((it: any) => ({
-              productId: it.product_id,
-              requested: it.requested,
-              available: it.available,
-            }))
-          );
-        case 'PRODUCT_UNAVAILABLE':
-          throw new ProductUnavailableError(err.message);
-        case 'TOO_MANY_PENDING_ORDERS':
-          throw new TooManyPendingOrdersError();
-        case 'PAYMENT_GATEWAY_ERROR':
-          throw new PaymentGatewayError(err.message || 'Gateway pembayaran gagal');
-        case 'VALIDATION_ERROR':
-          throw new ValidationError(err.message, Object.keys(err.fields || {})[0]);
-        default:
-          throw new PaymentGatewayError(err.message || 'Terjadi kesalahan internal');
-      }
+      mapErrorBody((errorBody as any).error as CreateOrderErrorBody['error']);
     }
 
     return {

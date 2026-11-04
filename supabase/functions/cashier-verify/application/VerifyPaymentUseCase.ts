@@ -1,6 +1,6 @@
 import { authenticateJWT } from "../../_shared/auth.ts";
 import { successResponse, errorResponse } from "../../_shared/http.ts";
-import { is_cashier } from "../../_shared/database.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export interface VerifyPaymentInput {
   order_id: string;
@@ -37,18 +37,18 @@ export async function verifyPaymentCashierUseCase(
     throw new Error("INVALID_RESULT: result tidak valid");
   }
 
-  // 3. Ambil order dari DB
-  const supabase = (globalThis as any).supabase; // akan diinject
-  // Untuk sekarang, panggil RPC verify_payment_cashier
-
-  // 4. Cek apakah order sudah paid (read-only)
-  // Lakukan di level RPC, tapi validasi awal di sini
-  if (input.result === "paid" && input.order_id) {
-    // Order yang sudah paid: tidak boleh diubah
-    // Akan dicek di RPC, tapi kita return status paid
+  // 3. Panggil RPC verify_payment_cashier dengan JWT kasir:
+  //    is_cashier() di dalam RPC membaca auth.uid() dari caller JWT.
+  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+  const url = Deno.env.get("SUPABASE_URL") || "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+  if (!url || !anonKey) {
+    throw new Error("INTERNAL_SUPABASE_CONFIG: SUPABASE_URL / SUPABASE_ANON_KEY tidak tersedia");
   }
+  const supabase = createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
 
-  // 5. Panggil verify_payment_cashier RPC
   const { data, error } = await supabase.rpc("verify_payment_cashier", {
     p_order_id: input.order_id,
     p_result: input.result,

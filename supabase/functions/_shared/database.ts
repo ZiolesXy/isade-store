@@ -1,4 +1,15 @@
 // Database helper functions for Edge Functions
+import { createSupabaseAdminClient } from "./supabaseAdmin.ts";
+
+async function getSupabaseAdmin(): Promise<any> {
+  // Dukung pola lama yang menaruh client di globalThis, lalu buat baru bila belum ada.
+  const existing = (globalThis as any).supabaseAdmin;
+  if (existing) return existing;
+
+  const supabase = createSupabaseAdminClient();
+  (globalThis as any).supabaseAdmin = supabase;
+  return supabase;
+}
 
 export async function apply_payment_result(
   p_order_id: string,
@@ -7,11 +18,7 @@ export async function apply_payment_result(
   p_source: string,
   p_payload: any
 ): Promise<string> {
-  const supabase = (globalThis as any).supabaseAdmin;
-  
-  if (!supabase) {
-    throw new Error("supabaseAdmin not available");
-  }
+  const supabase = await getSupabaseAdmin();
 
   const { data, error } = await supabase.rpc("apply_payment_result", {
     p_order_id: p_order_id,

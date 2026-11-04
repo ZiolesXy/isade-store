@@ -179,6 +179,24 @@ Delivery Gate antislop (perumpamaan butir, PASS/FAIL dengan bukti):
 
 ---
 
+## 2026-11-04 - Perbaikan bug: 403 pada select produk dan profil (grant execute fungsi policy RLS)
+
+Status: selesai
+
+Rincian:
+- Gejala: katalog dan checkout mengembalikan 403 Forbidden untuk `/rest/v1/products` dan `/rest/v1/profiles` sebagai anon maupun authenticated.
+- Akar: migrasi `profiles` (SQL Lampiran A PRD) mencabut `execute` atas `public.is_admin()` dan `public.is_cashier()` dari `public, anon, authenticated`, padahal kebijakan RLS di `rls_and_grants` dan `storage` memanggil kedua fungsi itu dengan hak pemanggil query. Postgres menolak dengan `permission denied for function is_cashier`, dan PostgREST menerjemahkannya jadi 403 untuk seluruh tabel yang policies-nya menyentuh fungsi tersebut. Uji Tahap 2 tidak menangkapnya karena psql berjalan sebagai `postgres` yang adalah pemilik fungsi.
+- Perbaikan: migrasi baru `20261104085216_grant_policy_functions.sql` memberi `grant execute` atas `is_admin()` dan `is_cashier()` ke `anon, authenticated, service_role`. Keamanan tidak berubah: fungsi tetap `security definer`, tanpa argumen, hasil hanya boolean.
+- catatan untuk Lampiran A PRD: bagian A.1 baris `revoke execute on function public.is_admin()/is_cashier()` perlu direvisi juga di dokumen sumber agar reset dari PRD tidak mengulang bug ini.
+
+Bukti verifikasi:
+- `supabase db reset` sukses dari nol, 8 migrasi diterapkan.
+- REST sebagai anon: `GET /rest/v1/products?is_active=eq.true&limit=3` -> 200 dengan 3 produk [CONTOH].
+- REST sebagai authenticated (akun uji baru): `GET /rest/v1/profiles?id=eq.<self>` -> 200, `{"role":"customer"}`.
+- Efek samping: `db reset` menghapus akun yang sebelumnya dipakai; perlu daftar ulang dan (bila perlu) jalankan ulang SQL penunjukan admin/cashier di 10.5.
+
+---
+
 ## <Tanggal> - Tahap 6: Verifikasi End-to-End
 
 Status: belum selesai

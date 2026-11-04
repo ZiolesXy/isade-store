@@ -1,5 +1,4 @@
-import { OrderGateway } from "./ports.ts";
-import { PaymentGateway } from "./ports.ts";
+import { OrderGateway, PaymentGateway, SnapItemDetail } from "./ports.ts";
 import {
   CreateOrderInput,
   CreateOrderWebResponse,
@@ -19,7 +18,8 @@ export class CreateOrderUseCase {
 
   async execute(
     userId: string,
-    input: CreateOrderInput
+    input: CreateOrderInput,
+    customer?: { email?: string }
   ): Promise<CreateOrderWebResponse | CreateOrderCashResponse> {
     // Validasi input
     if (!input.items || input.items.length === 0) {
@@ -30,107 +30,113 @@ export class CreateOrderUseCase {
       throw new ValidationError("Maksimum 20 jenis produk per order", "items_count");
     }
 
-    // Cek idempotency key - jika sudah ada, kembalikan order lama
-    const existingOrderId = await this.orderGateway.findByIdempotencyKey(
-      userId,
-      input.idempotency_key
-    );
-    if (existingOrderId) {
-      // Kembalikan order yang sudah ada - butuh query ulang
-      // Untuk sekarang, return struktur sederhana
-      return {
-        order_id: existingOrderId,
-        status: "pending",
-        total_amount: 0,
-        expires_at: "",
-        payment_method: input.payment_method,
-      } as CreateOrderCashResponse;
+    for (const item of input.items) {
+      if (!item.quantity || item.quantity < 1 || item.quantity > 99) {
+        throw new ValidationError("Kuantitas harus antara 1 dan 99", "items_quantity");
+      }
     }
 
-    // Pre-validasi stok sebelum membuat order
+    // Cek batas order pending per user
+    const pendingCount = await this.orderGateway.countPendingOrders(userId);
+    if (pendingCount >= 3) {
+      throw new TooManyPendingOrdersError();
+    }
+
+    // Idempotency: jika order dengan key yang sama sudah punya snap token,
+    // jangan buat transaksi Snap lagi (Midtrans menolak order_id ganda).
+    const existingOrderId = await this.orderGateway.findByIdempotencyKey(userId, input.idempotency_key);
+    if (existingOrderId && input.payment_method === "WEB_MIDTRANS") {
+      const existing = await this.orderGateway.getOrderSnapshot(existingOrderId);
+      if (existing?.snap_token) {
+        return {
+          order_id: existing.order_id,
+          snap_token: existing.snap_token,
+          redirect_url: existing.snap_redirect_url ?? "",
+          total_amount: existing.total_amount,
+          expires_at: existing.expires_at,
+          payment_method: existing.payment_method,
+        };
+      }
+    }
+
+    // Pre-validasi stok sebelum membuat order (pesan konflik lebih informatif);
+    // race condition tetap guarded oleh create_order_atomic.
     const stockValidation = await this.orderGateway.prevalidate(input.items);
     if (!stockValidation.success) {
       throw new StockConflictError(stockValidation.items);
     }
 
-    // Cek batas order pending per user
-    // Ini akan dicek di RPC, tapi kita validasi di sini juga
-    const pendingCount = await this.countPendingOrders(userId);
-    if (pendingCount >= 3) {
-      throw new TooManyPendingOrdersError();
+    // Buat order + kunci stok secara atomik lewat RPC.
+    // Jika idempotency key sudah ada, RPC mengembalikan order lama.
+    let orderId = await this.orderGateway.createOrderAtomic(
+      userId,
+      input.items,
+      input.payment_method,
+      input.idempotency_key
+    );
+
+    const snapshot = await this.orderGateway.getOrderSnapshot(orderId);
+    if (!snapshot) {
+      throw new PaymentGatewayError("Order berhasil dibuat tetapi gagal dibaca");
     }
 
     if (input.payment_method === "KASIR_CASH") {
-      // Order Kasir Cash: tidak ada Midtrans, langsung pending
-      const totalAmount = input.items.reduce((sum: number, item: { product_id: string; quantity: number }) => {
-        // Akan diisi oleh DB saat create_order_atomic
-        return sum;
-      }, 0);
-
-      return this.orderGateway.createOrderAtomic(
-        userId,
-        input.items,
-        input.payment_method,
-        input.idempotency_key
-      ).then((orderId: string) => ({
-        order_id: orderId,
-        status: "pending",
-        total_amount: totalAmount,
-        expires_at: "",
-        payment_method: input.payment_method,
-      } as CreateOrderCashResponse));
+      // Order Kasir Cash: tidak ada Midtrans, langsung pending menunggu verifikasi kasir.
+      return {
+        order_id: snapshot.order_id,
+        status: snapshot.status,
+        total_amount: snapshot.total_amount,
+        expires_at: snapshot.expires_at,
+        payment_method: snapshot.payment_method,
+      };
     }
 
-    // Payment_method WEB_MIDTRANS
-    if (input.payment_method === "WEB_MIDTRANS") {
-      // Cek apakah order sudah punya snap_token (idempotency)
-      const existingSnap = await this.orderGateway.findByIdempotencyKey(
-        userId,
-        input.idempotency_key
+    if (input.payment_method !== "WEB_MIDTRANS") {
+      throw new ValidationError("Payment method tidak valid", "payment_method");
+    }
+
+    if (snapshot.status !== "pending") {
+      // Order sudah final (misal rusak oleh error sebelumnya): laporkan apa adanya.
+      throw new PaymentGatewayError(`Order sudah berstatus ${snapshot.status}`);
+    }
+
+    // Midtrans: harga per item diambil dari DB (order_items), bukan dihitung ulang di klien.
+    const itemDetails: SnapItemDetail[] = snapshot.items.map((it) => ({
+      id: it.product_id,
+      price: it.unit_price,
+      quantity: it.quantity,
+      name: it.title.substring(0, 50),
+    }));
+
+    try {
+      const midtransResult = await this.paymentGateway.createSnapTransaction(
+        snapshot.order_id,
+        snapshot.total_amount,
+        itemDetails,
+        customer
       );
-      if (existingSnap) {
-        return {
-          order_id: existingSnap,
-          snap_token: "",
-          redirect_url: "",
-          total_amount: 0,
-          expires_at: "",
-          payment_method: input.payment_method,
-        } as CreateOrderWebResponse;
-      }
 
-      // Panggil Midtrans
-      try {
-        const midtransResult = await this.paymentGateway.createSnapTransaction(
-          "", // orderId akan di-set oleh DB
-          0, // totalAmount akan di-set oleh DB
-          input.items
-        );
+      await this.orderGateway.saveSnapToken(
+        snapshot.order_id,
+        midtransResult.token,
+        midtransResult.redirect_url
+      );
 
-        // Simpan snap_token ke DB (akan dilakukan di infrastructure)
-        // Untuk sekarang, return dengan token kosong
-        return {
-          order_id: "", // Akan di-set oleh DB
-          snap_token: midtransResult.token,
-          redirect_url: midtransResult.redirect_url,
-          total_amount: 0,
-          expires_at: "",
-          payment_method: input.payment_method,
-        } as CreateOrderWebResponse;
-      } catch (err: any) {
-        if (err instanceof PaymentGatewayError) {
-          throw err;
-        }
-        throw new PaymentGatewayError(err.message || "Gagal menghubungkan ke Midtrans");
+      return {
+        order_id: snapshot.order_id,
+        snap_token: midtransResult.token,
+        redirect_url: midtransResult.redirect_url,
+        total_amount: snapshot.total_amount,
+        expires_at: snapshot.expires_at,
+        payment_method: snapshot.payment_method,
+      };
+    } catch (err: any) {
+      // Gagal membuat transaksi Midtrans: lepas lock stok dengan menandai order gagal.
+      await this.orderGateway.markFailed(snapshot.order_id).catch(() => {});
+      if (err instanceof PaymentGatewayError) {
+        throw err;
       }
+      throw new PaymentGatewayError(err?.message || "Gagal menghubungkan ke Midtrans");
     }
-
-    throw new ValidationError("Payment method tidak valid", "payment_method");
-  }
-
-  private async countPendingOrders(userId: string): Promise<number> {
-    // Query ke DB untuk count order pending user
-    // Implementasi di infrastructure layer
-    return 0;
   }
 }

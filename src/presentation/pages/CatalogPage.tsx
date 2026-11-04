@@ -8,6 +8,7 @@ import { ProductCard } from '@/presentation/components/ProductCard';
 import { EmptyState, ErrorState } from '@/presentation/components/states';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 const PAGE_SIZE = 24;
 
@@ -40,14 +41,25 @@ export function CatalogPage() {
   }, [load]);
 
   function handleAdd(product: Product) {
-    add({
-      productId: product.id,
-      slug: product.slug,
-      title: product.title,
-      unitPrice: product.price,
-      quantity: 1,
-      imagePath: product.imagePath,
-    });
+    const before = useCartStore.getState().items.find((i) => i.productId === product.id);
+    add(
+      {
+        productId: product.id,
+        slug: product.slug,
+        title: product.title,
+        unitPrice: product.price,
+        quantity: 1,
+        imagePath: product.imagePath,
+      },
+      product.availableStock
+    );
+    const after = useCartStore.getState().items.find((i) => i.productId === product.id);
+    // Stok tidak tercukupi: qty di keranjang terpotong, beri tahu pengguna.
+    if ((!before && !after) || (before && after && after.quantity === before.quantity)) {
+      toast.warning(`Stok ${product.title} tinggal ${product.availableStock}.`);
+      return;
+    }
+    toast.success('Produk ditambahkan ke keranjang.');
   }
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / PAGE_SIZE)) : 1;

@@ -8,9 +8,20 @@ import {
   PaymentGatewayError,
   ValidationError,
 } from "./domain/entities.ts";
-import type { OrderGateway } from "./application/ports.ts";
+import type { OrderGateway, OrderSnapshot } from "./application/ports.ts";
 
 // Mock Order Gateway
+const SNAPSHOT: OrderSnapshot = {
+  order_id: "test-order-uuid",
+  status: "pending",
+  total_amount: 15000,
+  expires_at: "2026-01-01T00:00:00Z",
+  payment_method: "WEB_MIDTRANS",
+  snap_token: null,
+  snap_redirect_url: null,
+  items: [{ product_id: "prod-1", title: "Produk 1", unit_price: 15000, quantity: 1 }],
+};
+
 class MockOrderGateway implements OrderGateway {
   async prevalidate(items: any[]) {
     // Semua item valid
@@ -18,6 +29,12 @@ class MockOrderGateway implements OrderGateway {
   }
   async createOrderAtomic(userId: string, items: any[], paymentMethod: string, idempotencyKey: string, ttlMinutes?: number): Promise<string> {
     return "test-order-uuid";
+  }
+  async getOrderSnapshot(orderId: string): Promise<OrderSnapshot | null> {
+    return SNAPSHOT;
+  }
+  async countPendingOrders(userId: string): Promise<number> {
+    return 0;
   }
   async findByIdempotencyKey(userId: string, idempotencyKey: string): Promise<string | null> {
     return null;

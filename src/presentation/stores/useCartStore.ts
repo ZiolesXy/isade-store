@@ -6,8 +6,8 @@ import type { Product } from '../../domain/models/Product';
 
 interface CartState {
   items: CartItem[];
-  add: (item: CartItem) => void;
-  setQty: (productId: string, quantity: number) => void;
+  add: (item: CartItem, availableStock?: number) => void;
+  setQty: (productId: string, quantity: number, availableStock?: number) => void;
   remove: (productId: string) => void;
   clear: () => void;
   setItems: (items: CartItem[]) => void;
@@ -19,10 +19,11 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
 
-      add: (item) => set((state) => ({ items: addItem(state.items, item) })),
+      add: (item, availableStock) =>
+        set((state) => ({ items: addItem(state.items, item, availableStock) })),
 
-      setQty: (productId, quantity) =>
-        set((state) => ({ items: setQuantity(state.items, productId, quantity) })),
+      setQty: (productId, quantity, availableStock) =>
+        set((state) => ({ items: setQuantity(state.items, productId, quantity, availableStock) })),
 
       remove: (productId) => set((state) => ({ items: removeItem(state.items, productId) })),
 

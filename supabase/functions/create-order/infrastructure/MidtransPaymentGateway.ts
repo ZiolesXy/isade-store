@@ -2,8 +2,12 @@ import { MidtransClient } from "../_shared/midtrans/MidtransClient.ts";
 import {
   MidtransConfig,
   SnapCreateRequest,
-  SnapCreateResponse,
+  ItemDetails,
 } from "../_shared/midtrans/MidtransClient.ts";
+import {
+  PaymentGateway,
+  SnapItemDetail,
+} from "../application/ports.ts";
 
 export class MidtransPaymentGateway implements PaymentGateway {
   private client: MidtransClient;
@@ -15,39 +19,33 @@ export class MidtransPaymentGateway implements PaymentGateway {
   async createSnapTransaction(
     orderId: string,
     totalAmount: number,
-    items: Array<{ product_id: string; quantity: number }>
+    itemDetails: SnapItemDetail[],
+    customer?: { email?: string }
   ): Promise<{ token: string; redirect_url: string }> {
-    // Format item_details untuk Midtrans
-    // Nama item dipotong maksimal 50 karakter
-    const itemDetails = items.map(item => {
-      const name = `Product ${item.product_id.slice(0, 20)}`;
-      return {
-        id: item.product_id,
-        price: Math.round(totalAmount / items.reduce((s, i) => s + i.quantity, 0) || 1) || 0,
-        quantity: item.quantity,
-        name: name.substring(0, 50),
-      };
-    });
-
-    // Pastikan jumlah price * quantity sama persis dengan gross_amount
-    // Ini akan diverifikasi oleh Midtrans
+    const items: ItemDetails[] = itemDetails.map((item) => ({
+      id: item.id,
+      // Harga per unit dan judul produk berasal dari DB (order_items).
+      price: item.price,
+      quantity: item.quantity,
+      name: item.name.substring(0, 50),
+    }));
 
     const request: SnapCreateRequest = {
       transaction_details: {
-        order_id,
+        order_id: orderId,
         gross_amount: totalAmount,
       },
-      item_details: itemDetails,
+      item_details: items,
       customer_details: {
         first_name: "",
-        email: "",
+        email: customer?.email ?? "",
       },
       expiry: {
         unit: "minutes",
         duration: 30,
       },
       callbacks: {
-        finish: "/orders/[[order_id]]", // Akan diganti di runtime
+        finish: `https://isade-store.local/orders/${orderId}`,
       },
     };
 

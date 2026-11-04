@@ -1,5 +1,6 @@
 // Supabase Admin Client untuk Edge Functions
 // Dideploy dengan service_role key
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export function createSupabaseAdminClient() {
   // Return supabase client dengan service_role key

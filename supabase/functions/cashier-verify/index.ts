@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.223.0/http/server.ts";
-import { createCORSHandler } from "../../_shared/cors.ts";
-import { successResponse, errorResponse } from "../../_shared/http.ts";
+import { createCORSHandler } from "../_shared/cors.ts";
+import { successResponse, errorResponse } from "../_shared/http.ts";
 import { verifyPaymentCashierUseCase } from "./application/VerifyPaymentUseCase.ts";
 
 serve(

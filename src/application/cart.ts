@@ -9,22 +9,42 @@ export interface CartChange {
   availableStock?: number;
 }
 
-export function addItem(cart: CartItem[], item: CartItem): CartItem[] {
+/** Batas kuantitas: 99, atau stok produk bila diketahui. */
+export function maxQuantityFor(availableStock?: number): number {
+  if (availableStock == null) return 99;
+  return Math.min(99, Math.max(0, availableStock));
+}
+
+export function addItem(
+  cart: CartItem[],
+  item: CartItem,
+  availableStock?: number
+): CartItem[] {
+  const cap = maxQuantityFor(availableStock);
+  if (cap < 1) return cart; // stok habis: jangan tambahkan apa pun
+
   const existing = cart.find((i) => i.productId === item.productId);
   if (existing) {
     return cart.map((i) =>
       i.productId === item.productId
-        ? { ...i, quantity: Math.min(i.quantity + item.quantity, 99) }
+        ? { ...i, quantity: Math.min(i.quantity + item.quantity, cap) }
         : i
     );
   }
-  return [...cart, { ...item, quantity: Math.min(item.quantity, 99) }];
+  return [...cart, { ...item, quantity: Math.min(item.quantity, cap) }];
 }
 
-export function setQuantity(cart: CartItem[], productId: string, quantity: number): CartItem[] {
+export function setQuantity(
+  cart: CartItem[],
+  productId: string,
+  quantity: number,
+  availableStock?: number
+): CartItem[] {
+  const cap = maxQuantityFor(availableStock);
+  if (cap < 1) return removeItem(cart, productId); // stok habis: keluarkan dari keranjang
   return cart.map((i) =>
     i.productId === productId
-      ? { ...i, quantity: Math.min(Math.max(quantity, 1), 99) }
+      ? { ...i, quantity: Math.min(Math.max(quantity, 1), cap) }
       : i
   );
 }

@@ -1,7 +1,4 @@
-import { serveHTTP } from "https://deno.land/std@0.223.0/http/client.ts";
-import { encode } from "https://deno.land/std@0.223.0/encoding/base64.ts";
-
-export interface MidtransConfig {
+﻿export interface MidtransConfig {
   isProduction: boolean;
   serverKey: string;
   clientKey: string;
@@ -60,7 +57,7 @@ export class MidtransClient {
       : "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
     const authString = `${this.config.serverKey}:`;
-    const authBase64 = await encode(authString, "base");
+    const authBase64 = btoa(authString);
     const authHeader = `Basic ${authBase64}`;
 
     const body = JSON.stringify({
@@ -99,7 +96,7 @@ export class MidtransClient {
       : `https://api.sandbox.midtrans.com/v2/${orderId}/status`;
 
     const authString = `${this.config.serverKey}:`;
-    const authBase64 = await encode(authString, "base");
+    const authBase64 = btoa(authString);
     const authHeader = `Basic ${authBase64}`;
 
     const options: RequestInit = {
