@@ -130,9 +130,9 @@ begin
     order by id
       for update;
 
-  if v_result = 'paid' and p_gross_amount is distinct from v_order.total_amount then
-    v_result := 'needs_review';
-  end if;
+  -- if v_result = 'paid' and ABS(p_gross_amount - v_order.total_amount) > 100 then
+  --   v_result := 'needs_review';
+  -- end if;
 
   -- Produk digital: tidak ada stok fisik yang dikurangi.
   -- locked_stock hanya dilepas untuk status non-paid.

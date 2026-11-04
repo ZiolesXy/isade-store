@@ -57,7 +57,7 @@ serve(
 
       // sukses diproses (including no-op)
       return successResponse({
-        order_id: result.result,
+        order_id: body.order_id,
         status: result.result,
       });
 
