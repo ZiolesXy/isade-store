@@ -50,6 +50,39 @@ export class SupabaseProductRepo implements IProductRepository {
     return toProduct(data as ProductRow);
   }
 
+  async listAdmin(page: number, pageSize: number): Promise<ProductListResult> {
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) throw error;
+
+    return {
+      products: (data || []).map((row) => toProduct(row as ProductRow)),
+      total: count || 0,
+      page,
+      pageSize,
+    };
+  }
+
+  async getManyByIds(ids: string[]): Promise<Product[]> {
+    if (ids.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .in('id', ids);
+
+    if (error) throw error;
+
+    return (data || []).map((row) => toProduct(row as ProductRow));
+  }
+
   async create(input: ProductInput): Promise<Product> {
     const insert: ProductInsert = {
       slug: input.slug,
@@ -101,7 +134,7 @@ export class SupabaseProductRepo implements IProductRepository {
       .upload(path, file, { contentType: file.type, upsert: false });
     if (uploadError) throw uploadError;
 
-    const { data } = supabase.storage.from('products').getPublicUrl(path);
-    return data.publicUrl;
+    // Simpan path saja sesuai PRD bagian A.6; URL publik dibentuk di frontend lewat getPublicUrl.
+    return path;
   }
 }

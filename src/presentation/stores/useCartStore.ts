@@ -11,9 +11,6 @@ interface CartState {
   remove: (productId: string) => void;
   clear: () => void;
   setItems: (items: CartItem[]) => void;
-  itemSubtotal: (productId: string) => number;
-  total: number;
-  itemCount: number;
   reconcileWithProducts: (freshProducts: Product[]) => { changes: ReturnType<typeof reconcile>['changes'] };
 }
 
@@ -33,19 +30,6 @@ export const useCartStore = create<CartState>()(
 
       setItems: (items) => set({ items }),
 
-      itemSubtotal: (productId) => {
-        const item = get().items.find((i) => i.productId === productId);
-        return item ? item.unitPrice * item.quantity : 0;
-      },
-
-      get total() {
-        return subtotal(get().items);
-      },
-
-      get itemCount() {
-        return get().items.reduce((sum, i) => sum + i.quantity, 0);
-      },
-
       reconcileWithProducts: (freshProducts) => {
         const { cart, changes } = reconcile(get().items, freshProducts);
         set({ items: cart });
@@ -55,3 +39,11 @@ export const useCartStore = create<CartState>()(
     { name: 'isade-cart-storage' }
   )
 );
+
+// Subtotal dihitung lewat selector, tidak disimpan di state (PRD bagian 7.2 poin 3).
+export const selectCartItems = (state: CartState): CartItem[] => state.items;
+
+export const selectCartTotal = (state: CartState): number => subtotal(state.items);
+
+export const selectCartCount = (state: CartState): number =>
+  state.items.reduce((sum, item) => sum + item.quantity, 0);

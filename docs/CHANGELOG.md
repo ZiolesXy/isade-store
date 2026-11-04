@@ -141,13 +141,41 @@ Bukti verifikasi:
 
 ---
 
-## <Tanggal> - Tahap 5: Presentation (UI)
+## 2026-11-04 - Tahap 5: Presentation (UI)
 
-Status: belum selesai
+Status: selesai
 
 Rincian:
+- Design Read ditulis sebelum koding (DESIGN.md sudah terisi penuh, tanpa `[ISI]`): storefront gantungan kunci untuk mahasiswa, gaya akademis ceria, dial ENERGY 2/3 / RHYTHM 2/3 / MOTION 1/3.
+- Token desain DESIGN.md dipetakan ke Tailwind v4 di src/index.css: primary #302b8f (top bar, judul), secondary #A3E635 (badge kategori, filter aktif), CTA #F59E0b hanya untuk tombol interaksi utama (Bayar Sekarang, Tambah ke Keranjang, Lanjutkan Pembayaran, Verifikasi Pembayaran), netral #F8FAFC, radius 12px, tema terang (dark: class-based, bukan preferensi OS), font Plus Jakarta Sans (judul) + Inter (teks) via Google Fonts, ikon Phosphor (duotone).
+- routes/AppRoutes.tsx: semua rute PRD 7.1 dengan RequireSessionReady (loading saat sesi belum diketahui), RequireAuth (/orders, /orders/:id), RequireAdmin (/admin/*), RequireCashier (/kasir, cashier atau admin).
+- stores/authSession.ts: bootstrap sesi (getSession, profil role, onAuthStateChange) yang mengisi useAuthStore.
+- Navbar: nama toko sebagai teks (logo belum ada, PRD 8.2.5), link hanya rute yang ada, Admin hanya untuk role admin, Kasir untuk cashier/admin, Pesanan Saya hanya saat login, jumlah item keranjang, menu akun (email + Keluar), menu mobile lewat Sheet.
+- ProductCard sesuai PRD 8.2 poin 3 dan 4: gambar, judul, harga, badge stok hanya "Stok habis" dan "Sisa N" (ambang 5, karena DESIGN.md belum menentukan angkanya; dicatat di sini), satu tombol.
+- Halaman: CatalogPage (grid 2/3/4 kolom per 8.2.7, paginasi 24, skeleton, kosong "Belum ada produk yang dijual.", error + Muat ulang), ProductDetailPage (skeleton, "Produk tidak ditemukan atau sudah tidak dijual.", tombol nonaktif "Stok habis"), CartPage (rekonsiliasi per baris, pilihan Bayar di Web (Midtrans) / Bayar di Kasir (Cash), ringkasan + Bayar Sekarang, tanpa form alamat, pesan error per kode: stok/pending terlalu banyak/gateway, idempotency key dipakai ulang saat retry), OrdersPage (loading, kosong "Belum ada pesanan.", error, paginasi), OrderDetailPage (pesan status per 7.4.5, hitung mundur sisa waktu, polling 5 detik maksimal 2 menit lalu tombol Muat ulang, Lanjutkan Pembayaran untuk pending WEB_MIDTRANS, info verifikasi kasir untuk KASIR_CASH), LoginPage (tab Masuk/Daftar, validasi field, error kredensial, pesan cek email), AdminProductsPage (tabel, form Dialog, slug, kompres gambar ke WebP lebar maks 1200px, error "Stok tidak bisa di bawah jumlah yang sedang dipesan: N", slug unik), AdminOrdersPage (tabel + filter status termasuk needs_review), KasirPage (Scan Transaksi, Verifikasi Pembayaran, ubah ke status lain, indikator read-only untuk order paid, pesan 403/404).
+- src/lib: utils.ts (cn), imageCompress.ts (WebP <= 1200px), productImage.ts (path -> getPublicUrl), format.ts ditambah formatDateTime/formatDate (id-ID, zona browser).
+- Perbaikan terhadap kode Tahap 4 (dilaporkan, tidak diam-diam):
+  - useCartStore: getter total/itemCount buang hasil saat merge state (stale satu update); diganti selector selectCartTotal/selectCartCount yang menghitung subtotal dari items (sesuai PRD 7.2 poin 3).
+  - useCheckout: createOrder menerima idempotencyKey dari pemanggil (dipakai ulang saat retry, PRD 7.2 poin 5); openSnap menerima callback Snap.
+  - IProductRepository ditambah listAdmin (halaman admin perlu produk nonaktif) dan getManyByIds (rekonsiliasi keranjang, PRD 7.2 poin 2).
+  - SupabaseProductRepo.uploadImage sebelumnya mengembalikan publicUrl; sesuai PRD A.6 yang disimpan harus path, URL publik dibentuk di frontend.
+  - database.types.ts hasil redirect `supabase gen types` ternyata UTF-16 (PowerShell); dikonversi ke UTF-8, isinya tidak berubah.
+- Berkas duplikat/sisa Tahap 3 yang rusak sintaksnya (supabase/auth.ts, supabase/cors.ts, supabase/database.ts, supabase/http.ts, supabase/supabaseAdmin.ts, supabase/_shared/, dan salinan lepas di supabase/functions/) dihapus: tidak diimport oleh fungsi berjalan (semua pakai functions/_shared) dan merusak lint.
+- vitest.config.ts dibatasi include src/**, supaya npx vitest run tidak memungut berkas uji Deno di supabase/functions (yang jalurnya deno test).
+- Tidak ada em dash di teks UI. Tidak ada angka, testimoni, atau klaim yang tidak berasal dari data.
 
 Bukti verifikasi:
+- npm run build sukses tanpa error TypeScript (dist/ dibangun; peringatan ukuran chunk > 500 kB, sifatnya info).
+- npx vitest run: 3 berkas, 24/24 tes lulus.
+- npx oxlint: 0 error (hanya peringatan gaya set-state-in-effect / fitur React Compiler).
+- Dev server jalan tanpa error; semua modul halaman ter-transform 200 (/, /src/main.tsx, AppRoutes, CartPage, AdminProductsPage, KasirPage, index.css), output dev server bersih.
+- Konsol per halaman: belum diverifikasi di browser; click-through penuh masuk Tahap 6.
+
+Delivery Gate antislop (perumpamaan butir, PASS/FAIL dengan bukti):
+- Hard Gate: PASS. Satu focal point per layar (grid katalog; ringkasan+tombol bayar di keranjang; status pembayaran di detail order; formulir scan di kasir). Accent #F59E0b hanya untuk tombol interaksi utama (Kelas .bg-cta dipakai di 4 tombol: Bayar Sekarang, Tambah ke Keranjang, Lanjutkan Pembayaran, Verifikasi Pembayaran); badge, ikon, border tidak memakai accent (badge memakai secondary lime / muted / primary). Tidak ada logo buatan; nama toko tampil sebagai teks.
+- Purpose-Gate: PASS. Semua state wajib PRD 7.4 tersedia per halaman (loading skeleton, kosong dengan teks persis 7.4/7.5, error dengan tombol Muat ulang). Badge stok hanya "Stok habis" dan "Sisa N". Tidak ada angka statistik, testimoni, atau klaim keamanan.
+- Liveliness: PASS. Tema terang dengan palet DESIGN.md (indigo, lime, amber, netral #F8FAFC), radius 12px konsisten, ikon Phosphor duotone (motion 1/3: hanya transisi hover/focus dan spinner, tanpa animasi besar).
+- Craftsmanship: PASS. Grid 2/3/4 kolom per 8.2.7, target sentuh >= 44px (tombol h-9/h-10 + padding), teks kontras AA (indigo #302b8f di terang ~10:1; teks sekunder #475569 ~7:1; teks di atas lime memakai #1a2e05), fokus terlihat (focus-visible ring ring/50 di seluruh komponen shadcn), Sheet/Dialog bisa ditutup Escape (bawaan radix), semua rute server-seen mode keyboard (Link/Button asli).
 
 ---
 

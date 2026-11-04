@@ -5,23 +5,33 @@ import type { CartItem } from '../../domain/models/CartItem';
 import { useCartStore } from '../stores/useCartStore';
 import { loadSnap, isSnapReady } from '../../data/midtrans/snapLoader';
 
+export type SnapCallbacks = {
+  onPaymentSucceeded?: () => void;
+  onPaymentPending?: () => void;
+  onPaymentFailed?: (error?: unknown) => void;
+  onClosedByUser?: () => void;
+};
+
 export function useCheckout(checkoutGateway: ICheckoutGateway, clientKey: string) {
   const checkoutUseCase = new CheckoutUseCase(checkoutGateway);
 
   async function createOrder(
     items: CartItem[],
-    paymentMethod: PaymentMethod
+    paymentMethod: PaymentMethod,
+    idempotencyKey?: string
   ): Promise<CreateOrderOutput> {
     if (items.length === 0) {
       throw new Error('Keranjang kosong');
     }
 
-    const idempotencyKey = crypto.randomUUID();
+    // Kunci idempotensi dari pemanggil: dipakai ulang saat request yang sama diulang,
+    // supaya klik ganda atau jaringan putus tidak membuat dua order.
+    const key = idempotencyKey ?? crypto.randomUUID();
 
     const input: CreateOrderInput = {
       items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       paymentMethod,
-      idempotencyKey,
+      idempotencyKey: key,
     };
 
     const result = await checkoutUseCase.createOrder(input);
@@ -32,14 +42,19 @@ export function useCheckout(checkoutGateway: ICheckoutGateway, clientKey: string
     return result;
   }
 
-  async function openSnap(token: string): Promise<void> {
+  async function openSnap(token: string, callbacks?: SnapCallbacks): Promise<void> {
     if (!isSnapReady()) {
       await loadSnap(clientKey);
     }
 
     const win = typeof window !== 'undefined' ? (window as any) : null;
     if (win?.snap?.pay) {
-      win.snap.pay(token);
+      win.snap.pay(token, {
+        onSuccess: () => callbacks?.onPaymentSucceeded?.(),
+        onPending: () => callbacks?.onPaymentPending?.(),
+        onError: (error: unknown) => callbacks?.onPaymentFailed?.(error),
+        onClose: () => callbacks?.onClosedByUser?.(),
+      });
     } else {
       throw new Error('Midtrans Snap tidak siap');
     }
