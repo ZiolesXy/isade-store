@@ -32,13 +32,22 @@ Bukti verifikasi: Dokumen PRD direvisi ulang penuh.
 
 ## Template entri berikutnya (salin saat satu bagian selesai)
 
-## <Tanggal> - Tahap 1: Fondasi Proyek
+## 2026-11-04 - Tahap 1: Fondasi Proyek
 
-Status: belum selesai
+Status: selesai
 
 Rincian:
+- Dependensi dipasang: @supabase/supabase-js, react-router, zustand, clsx, tailwind-merge, tailwindcss, @tailwindcss/vite, @phosphor-icons/react (sesuai DESAIN.md). Dev: vitest, @testing-library/react, jsdom.
+- Tailwind v4: @tailwindcss/vite difleksikan di vite.config.ts, src/index.css diisi @import "tailwindcss";, tidak ada tailwind.config.js.
+- Alias @/* ditambahkan di tsconfig.json, tsconfig.app.json, dan vite.config.ts; strict diaktifkan.
+- shadcn init dijalankan; komponen button, input, label, card, dialog, sheet, badge, skeleton, sonner, form, select, table ditambahkan.
+- Struktur folder dibuat persis PRD bagian 3.2 (src/domain, application, data, presentation, lib, di.ts kosong, supabase/migrations, tests, functions).
+- src/data/supabaseClient.ts dibuat; gagal dengan pesan jelas jika VITE_SUPABASE_URL atau VITE_SUPABASE_ANON_KEY kosong.
+- .env.example dibuat sesuai PRD bagian 10.1; .env.local sudah tercakup .gitignore (*.local).
+- supabase init dijalankan; supabase/config.toml diisi verify_jwt untuk create-order, midtrans-webhook, cashier-verify.
+- src/lib/format.ts berisi formatRupiah sesuai PRD bagian 7.5 dengan unit test.
 
-Bukti verifikasi:
+Bukti verifikasi: `npm run build` selesai tanpa error TypeScript (`dist/` dibangun); `npx vitest run` 4/4 lulus.
 
 ---
 
