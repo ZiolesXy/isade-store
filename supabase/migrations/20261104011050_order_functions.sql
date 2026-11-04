@@ -139,8 +139,8 @@ begin
   if v_result = 'paid' then
     -- Produk digital: stok berkurang (terjual) dan locked_stock dilepas.
     update public.products as p
-       set stock = p.stock - oi.quantity,
-           locked_stock = p.locked_stock - oi.quantity
+       set stock = greatest(p.stock - oi.quantity, 0),
+           locked_stock = greatest(p.locked_stock - oi.quantity, 0)
       from public.order_items as oi
      where oi.order_id = p_order_id and p.id = oi.product_id;
 
@@ -153,7 +153,7 @@ begin
 
   elsif v_result in ('expired', 'cancelled', 'failed') then
     update public.products as p
-       set locked_stock = p.locked_stock - oi.quantity
+       set locked_stock = greatest(p.locked_stock - oi.quantity, 0)
       from public.order_items as oi
      where oi.order_id = p_order_id and p.id = oi.product_id;
 
@@ -208,8 +208,11 @@ begin
      where id = p_order_id;
 
   elsif p_result in ('failed', 'expired', 'cancelled') then
+    -- Gunakan GREATEST agar locked_stock tidak negatif jika stok
+    -- sudah dilepaskan sebelumnya (order pernah expired/cancelled/failed
+    -- lalu berubah menjadi needs_review melalui pembayaran terlambat).
     update public.products as p
-       set locked_stock = p.locked_stock - oi.quantity
+       set locked_stock = greatest(p.locked_stock - oi.quantity, 0)
       from public.order_items as oi
      where oi.order_id = p_order_id and p.id = oi.product_id;
 

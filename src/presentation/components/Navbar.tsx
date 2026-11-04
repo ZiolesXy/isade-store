@@ -36,6 +36,11 @@ function useNavLinks(): NavLinkItem[] {
       visible: role === 'cashier' || role === 'admin',
     },
     { to: '/admin/products', label: 'Admin', visible: role === 'admin' },
+    {
+      to: '/admin/needs-review',
+      label: 'Tinjau Pembayaran',
+      visible: role === 'admin',
+    },
   ];
 }
 

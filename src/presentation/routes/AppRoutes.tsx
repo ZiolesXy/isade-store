@@ -14,6 +14,7 @@ import { OrderDetailPage } from '../pages/OrderDetailPage';
 import { LoginPage } from '../pages/LoginPage';
 import { AdminProductsPage } from '../pages/AdminProductsPage';
 import { AdminOrdersPage } from '../pages/AdminOrdersPage';
+import { AdminNeedsReviewPage } from '../pages/AdminNeedsReviewPage';
 import { KasirPage } from '../pages/KasirPage';
 
 /** All rute PRD bagian 7.1. */
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route element={<RequireAdmin />}>
           <Route path="/admin/products" element={<AdminProductsPage />} />
           <Route path="/admin/orders" element={<AdminOrdersPage />} />
+          <Route path="/admin/needs-review" element={<AdminNeedsReviewPage />} />
         </Route>
 
         <Route element={<RequireCashier />}>
