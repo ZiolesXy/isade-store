@@ -52,7 +52,7 @@ export async function handleNotificationUseCase(
     const dbResult = await apply_payment_result(
       order_id,
       mappedStatus,
-      parseInt(gross_amount.replace(/[^0-9]/g, ""), 10),
+      Math.round(parseFloat(gross_amount)),
       "webhook",
       payload
     );
