@@ -39,6 +39,25 @@ function statusMessage(order: Order, countdown: string): string {
   }
 }
 
+function qrHelperText(order: Order): string {
+  const expired = new Date(order.expiresAt).getTime() <= Date.now();
+
+  switch (order.status) {
+    case 'pending':
+      if (order.paymentMethod === 'KASIR_CASH') {
+        return 'Tunjukkan QR Code ini kepada kasir untuk pembayaran tunai.';
+      }
+      if (expired) {
+        return 'Waktu pembayaran web sudah lewat. Tunjukkan QR Code ini ke kasir untuk pengecekan pesanan.';
+      }
+      return 'Selesaikan pembayaran lewat web. QR Code ini juga bisa ditunjukkan ke kasir untuk pengecekan status.';
+    case 'paid':
+      return 'Pembayaran sudah diterima. QR Code tetap tersedia untuk pengecekan di kasir.';
+    default:
+      return 'QR Code ini berisi kode pesanan dan tetap bisa dipindai di kasir untuk pengecekan.';
+  }
+}
+
 function remainingText(expiresAt: string): string {
   const ms = new Date(expiresAt).getTime() - Date.now();
   if (ms <= 0) return 'Waktu pembayaran sudah habis.';
@@ -157,25 +176,22 @@ export function OrderDetailPage() {
         </p>
         <p className="mt-1 text-sm text-muted-foreground">{statusMessage(order, countdown)}</p>
 
-        {order.status === 'pending' && order.paymentMethod === 'KASIR_CASH' ? (
-          <div className="mt-3 flex flex-col items-center gap-2 rounded-md bg-muted px-3 py-3">
-            <div className="rounded-md bg-white p-2">
-              {/* QR berisi order_id agar kasir cukup memindai lewat halaman Kasir (Kamera). */}
-              <QRCodeSVG
-                value={order.id}
-                size={160}
-                level="M"
-                marginSize={2}
-                title={`QR Code pesanan ${order.id}`}
-                aria-label={`QR Code pesanan ${order.id}`}
-              />
-            </div>
-            <p className="font-mono text-xs">{order.id}</p>
-            <p className="text-center text-sm text-muted-foreground">
-              Tunjukkan QR Code ini kepada kasir untuk pembayaran tunai.
-            </p>
+        {/* QR berisi order_id: kasir cukup memindai lewat halaman Kasir (Kamera).
+            Selalu tampil — untuk pembayaran tunai maupun pesanan yang dibayar lewat web. */}
+        <div className="mt-3 flex flex-col items-center gap-2 rounded-md bg-muted px-3 py-3">
+          <div className="rounded-md bg-white p-2">
+            <QRCodeSVG
+              value={order.id}
+              size={160}
+              level="M"
+              marginSize={2}
+              title={`QR Code pesanan ${order.id}`}
+              aria-label={`QR Code pesanan ${order.id}`}
+            />
           </div>
-        ) : null}
+          <p className="font-mono text-xs">{order.id}</p>
+          <p className="text-center text-sm text-muted-foreground">{qrHelperText(order)}</p>
+        </div>
 
         {canContinuePayment ? (
           <div className="mt-3">

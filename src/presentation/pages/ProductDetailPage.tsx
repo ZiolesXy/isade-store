@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { Minus, Plus } from '@phosphor-icons/react';
 import type { Product } from '@/domain/models/Product';
 import { di } from '@/di';
 import { useCartStore } from '@/presentation/stores/useCartStore';
+import { useAuthStore } from '@/presentation/stores/useAuthStore';
 import { formatRupiah } from '@/lib/format';
 import { getProductImageUrl } from '@/lib/productImage';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,8 @@ import { toast } from 'sonner';
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const add = useCartStore((s) => s.add);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +89,15 @@ export function ProductDetailPage() {
 
   function handleAdd() {
     if (outOfStock) return;
+    const { sessionReady, userId } = useAuthStore.getState();
+    if (sessionReady && !userId) {
+      navigate('/login', {
+        state: { from: location.pathname + location.search },
+        replace: true,
+      });
+      toast.info('Silakan masuk untuk menambahkan produk ke keranjang.');
+      return;
+    }
     add(
       {
         productId: current.id,

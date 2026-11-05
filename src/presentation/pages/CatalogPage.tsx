@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import type { Product } from '@/domain/models/Product';
 import { di } from '@/di';
 import { useCartStore } from '@/presentation/stores/useCartStore';
+import { useAuthStore } from '@/presentation/stores/useAuthStore';
 import type { ProductListResult } from '@/domain/models/Product';
 import { ProductCard } from '@/presentation/components/ProductCard';
 import { EmptyState, ErrorState } from '@/presentation/components/states';
@@ -17,6 +19,8 @@ const GRID_CLASS = 'grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4';
 
 export function CatalogPage() {
   const add = useCartStore((s) => s.add);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [result, setResult] = useState<ProductListResult | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -41,6 +45,15 @@ export function CatalogPage() {
   }, [load]);
 
   function handleAdd(product: Product) {
+    const { sessionReady, userId } = useAuthStore.getState();
+    if (sessionReady && !userId) {
+      navigate('/login', {
+        state: { from: location.pathname + location.search },
+        replace: true,
+      });
+      toast.info('Silakan masuk untuk menambahkan produk ke keranjang.');
+      return;
+    }
     const before = useCartStore.getState().items.find((i) => i.productId === product.id);
     add(
       {

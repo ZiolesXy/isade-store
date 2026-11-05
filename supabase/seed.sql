@@ -1,11 +1,46 @@
--- Seed data untuk pengembangan lokal.
--- Semua produk contoh diberi judul berawalan [CONTOH] supaya tidak lolos ke production.
+-- -- Seed data untuk pengembangan lokal.
+-- -- Semua produk contoh diberi judul berawalan [CONTOH] supaya tidak lolos ke production.
 
-insert into public.products (slug, title, description, price, stock, locked_stock, image_path, is_active)
-values
-  ('contoh-gantungan-kunci-1', '[CONTOH] Gantungan Kunci Tekno Mini', 'Gantungan kunci kecil berbentuk ikon teknologi, cocok untuk tas atau kunci rumah.', 25000, 10, 0, NULL, true),
-  ('contoh-gantungan-kunci-2', '[CONTOH] Gantungan Kunci Akrilik Transparan', 'Gantungan kunci akrilik dengan desain minimalis dan transparan.', 35000, 5, 0, NULL, true),
-  ('contoh-gantungan-kunci-3', '[CONTOH] Gantungan Kunci Kulit Sintetis', 'Gantungan kunci dari bahan kulit sintetis berkualitas dengan jahitan rapi.', 45000, 0, 0, NULL, true),
-  ('contoh-gantungan-kunci-4', '[CONTOH] Gantungan Kunci LED Warna-Warni', 'Gantungan kunci dengan lampu LED yang bisa diatur warnanya.', 55000, 8, 0, NULL, true),
-  ('contoh-gantungan-kunci-5', '[CONTOH] Gantungan Kunci Hias Motif Bunga', 'Gantungan kunci dengan hiasan bunga kain yang indah dan kerenn.', 30000, 1, 0, NULL, true),
-  ('contoh-gantungan-kunci-6', '[CONTOH] Gantungan Kunci Edisi Terbatas', 'Gantungan kunci edisi terbatas dengan desain eksklusif, stok sangat terbatas.', 75000, 3, 0, NULL, true);
+-- insert into public.products (slug, title, description, price, stock, locked_stock, image_path, is_active)
+-- values
+--   ('contoh-gantungan-kunci-1', '[CONTOH] Gantungan Kunci Tekno Mini', 'Gantungan kunci kecil berbentuk ikon teknologi, cocok untuk tas atau kunci rumah.', 25000, 10, 0, NULL, true), 
+--   ('contoh-gantungan-kunci-2', '[CONTOH] Gantungan Kunci Akrilik Transparan', 'Gantungan kunci akrilik dengan desain minimalis dan transparan.', 35000, 5, 0, NULL, true), 
+--   ('contoh-gantungan-kunci-3', '[CONTOH] Gantungan Kunci Kulit Sintetis', 'Gantungan kunci dari bahan kulit sintetis berkualitas dengan jahitan rapi.', 45000, 0, 0, NULL, true), 
+--   ('contoh-gantungan-kunci-4', '[CONTOH] Gantungan Kunci LED Warna-Warni', 'Gantungan kunci dengan lampu LED yang bisa diatur warnanya.', 55000, 8, 0, NULL, true), 
+--   ('contoh-gantungan-kunci-5', '[CONTOH] Gantungan Kunci Hias Motif Bunga', 'Gantungan kunci dengan hiasan bunga kain yang indah dan kerenn.', 30000, 1, 0, NULL, true), 
+--   ('contoh-gantungan-kunci-6', '[CONTOH] Gantungan Kunci Edisi Terbatas', 'Gantungan kunci edisi terbatas dengan desain eksklusif, stok sangat terbatas.', 75000, 3, 0, NULL, true),
+--   ('contoh-gantungan-kunci-7', '[CONTOH] Gantungan Kunci Kulit Custom', 'Gantungan kunci kulit sintetis yang bisa diukir nama sesuai keinginan.', 48000, 15, 0, NULL, true),
+--   ('contoh-gantungan-kunci-8', '[CONTOH] Gantungan Kunci Anime Akrilik', 'Gantungan kunci akrilik bergambar karakter anime populer edisi terbatas.', 32000, 25, 0, NULL, true),
+--   ('contoh-gantungan-kunci-9', '[CONTOH] Gantungan Kunci Kompas Mini', 'Gantungan kunci fungsional dilengkapi kompas kecil untuk petualang.', 28000, 12, 0, NULL, true),
+--   ('contoh-gantungan-kunci-10', '[CONTOH] Gantungan Kunci Pembuka Botol', 'Gantungan kunci besi multifungsi yang bisa digunakan sebagai pembuka botol.', 20000, 50, 0, NULL, true),
+--   ('contoh-gantungan-kunci-11', '[CONTOH] Gantungan Kunci Rajut Karakter', 'Gantungan kunci rajutan tangan bentuk hewan lucu dan menggemaskan.', 40000, 8, 0, NULL, true),
+--   ('contoh-gantungan-kunci-12', '[CONTOH] Gantungan Kunci Kayu Estetik', 'Gantungan kunci dari kayu pinus asli dengan grafir motif alam.', 35000, 14, 0, NULL, true),
+--   ('contoh-gantungan-kunci-13', '[CONTOH] Gantungan Kunci Boneka Plush', 'Gantungan kunci boneka bulu halus berukuran mini yang sangat lembut.', 42000, 20, 0, NULL, true),
+--   ('contoh-gantungan-kunci-14', '[CONTOH] Gantungan Kunci Silikon Kartun', 'Gantungan kunci berbahan silikon lentur, tahan air, dan mudah dibersihkan.', 18000, 35, 0, NULL, true),
+--   ('contoh-gantungan-kunci-15', '[CONTOH] Gantungan Kunci Logam Premium', 'Gantungan kunci berbahan stainless steel anti karat dengan finishing glossy.', 65000, 7, 0, NULL, true),
+--   ('contoh-gantungan-kunci-16', '[CONTOH] Gantungan Kunci Kubus Rubik Mini', 'Gantungan kunci mainan rubik 3x3 mini yang benar-benar bisa dimainkan.', 22000, 18, 0, NULL, true),
+--   ('contoh-gantungan-kunci-17', '[CONTOH] Gantungan Kunci Senter LED Mini', 'Gantungan kunci dengan senter darurat yang super terang dan awet.', 27000, 30, 0, NULL, true),
+--   ('contoh-gantungan-kunci-18', '[CONTOH] Gantungan Kunci Makrame Boho', 'Gantungan kunci anyaman tali katun gaya bohemian untuk estetika tas.', 33000, 5, 0, NULL, true),
+--   ('contoh-gantungan-kunci-19', '[CONTOH] Gantungan Kunci Dompet Koin', 'Gantungan kunci yang merangkap sebagai dompet kecil untuk uang koin.', 38000, 11, 0, NULL, true),
+--   ('contoh-gantungan-kunci-20', '[CONTOH] Gantungan Kunci Astronot Mini', 'Gantungan kunci figur astronot dengan helm transparan yang keren.', 45000, 16, 0, NULL, true),
+--   ('contoh-gantungan-kunci-21', '[CONTOH] Gantungan Kunci Bentuk Kucing', 'Gantungan kunci siluet kucing berbahan resin kilap dengan glitter.', 29000, 9, 0, NULL, true),
+--   ('contoh-gantungan-kunci-22', '[CONTOH] Gantungan Kunci Kalkulator Mini', 'Gantungan kunci kalkulator digital 8 digit yang berfungsi normal.', 50000, 6, 0, NULL, true),
+--   ('contoh-gantungan-kunci-23', '[CONTOH] Gantungan Kunci Kapsul Waterproof', 'Gantungan kunci botol kapsul kecil untuk menyimpan catatan darurat.', 24000, 40, 0, NULL, true),
+--   ('contoh-gantungan-kunci-24', '[CONTOH] Gantungan Kunci Peluit Outdoor', 'Gantungan kunci peluit aluminium dengan suara nyaring untuk survival.', 19000, 22, 0, NULL, true),
+--   ('contoh-gantungan-kunci-25', '[CONTOH] Gantungan Kunci Paspor Mini', 'Gantungan kunci miniatur buku paspor dengan detail yang sangat mirip.', 26000, 13, 0, NULL, true),
+--   ('contoh-gantungan-kunci-26', '[CONTOH] Gantungan Kunci QR Code Custom', 'Gantungan kunci akrilik untuk cetak QR code link sosial media Anda.', 37000, 0, 0, NULL, true),
+--   ('contoh-gantungan-kunci-27', '[CONTOH] Gantungan Kunci Sandi Kombinasi', 'Gantungan kunci gembok kecil dengan kombinasi angka pengaman.', 55000, 4, 0, NULL, true),
+--   ('contoh-gantungan-kunci-28', '[CONTOH] Gantungan Kunci Manik-manik Y2K', 'Gantungan kunci tren Y2K dengan manik-manik warna warni pastel.', 31000, 17, 0, NULL, true),
+--   ('contoh-gantungan-kunci-29', '[CONTOH] Gantungan Kunci Meteran Gulung', 'Gantungan kunci fungsional berisi pita meteran sepanjang 1 meter.', 23000, 28, 0, NULL, true),
+--   ('contoh-gantungan-kunci-30', '[CONTOH] Gantungan Kunci Pembersih Layar', 'Gantungan kunci dengan bantalan microfiber untuk lap layar HP.', 21000, 50, 0, NULL, true),
+--   ('contoh-gantungan-kunci-31', '[CONTOH] Gantungan Kunci Stand Handphone', 'Gantungan kunci lipat plastik yang bisa diubah menjadi dudukan HP.', 15000, 60, 0, NULL, true),
+--   ('contoh-gantungan-kunci-32', '[CONTOH] Gantungan Kunci Bentuk Pizza', 'Gantungan kunci bahan karet tebal menyerupai sepotong pizza lezat.', 17000, 19, 0, NULL, true),
+--   ('contoh-gantungan-kunci-33', '[CONTOH] Gantungan Kunci Musik Spotify', 'Gantungan kunci akrilik custom dengan cetakan barcode lagu Spotify.', 39000, 12, 0, NULL, true),
+--   ('contoh-gantungan-kunci-34', '[CONTOH] Gantungan Kunci Dadu Keberuntungan', 'Gantungan kunci berisi dua buah dadu mini transparan di dalam akrilik.', 25000, 8, 0, NULL, true),
+--   ('contoh-gantungan-kunci-35', '[CONTOH] Gantungan Kunci Hand Sanitizer', 'Gantungan kunci holder botol kosong untuk hand sanitizer gel.', 28000, 0, 0, NULL, true),
+--   ('contoh-gantungan-kunci-36', '[CONTOH] Gantungan Kunci Kulit Vintage', 'Gantungan kunci kulit asli dengan gantungan model bakar klasik.', 70000, 5, 0, NULL, true),
+--   ('contoh-gantungan-kunci-37', '[CONTOH] Gantungan Kunci Inisial Huruf', 'Gantungan kunci resin bening berisi bunga kering bentuk huruf.', 43000, 14, 0, NULL, true),
+--   ('contoh-gantungan-kunci-38', '[CONTOH] Gantungan Kunci Gameboy Retro', 'Gantungan kunci konsol game mini yang bisa memainkan game tetris.', 58000, 10, 0, NULL, true),
+--   ('contoh-gantungan-kunci-39', '[CONTOH] Gantungan Kunci Target Panahan', 'Gantungan kunci berbahan karet tebal desain papan target panahan.', 22000, 25, 0, NULL, true),
+--   ('contoh-gantungan-kunci-40', '[CONTOH] Gantungan Kunci Dreamcatcher', 'Gantungan kunci rajutan penangkap mimpi mini berbulu cantik.', 36000, 6, 0, NULL, true),
+--   ('contoh-gantungan-kunci-41', '[CONTOH] Gantungan Kunci Glow in the Dark', 'Gantungan kunci yang dapat menyala dalam gelap setelah terkena cahaya.', 26000, 33, 0, NULL, true);

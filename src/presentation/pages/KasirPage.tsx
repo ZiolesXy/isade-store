@@ -191,9 +191,10 @@ export function KasirPage() {
       }
       setOrder(found);
 
-      // 4) Saat hasil scan dari kamera, verifikasi langsung menjadi 'paid'
-      //    lewat usecase verifikasi kasir (useCashier.verifyPayment).
-      if (found.status === 'pending') {
+      // 4) Saat hasil scan dari kamera, auto-verifikasi 'paid' hanya untuk
+      //    pembayaran tunai (pesanan web harus diverifikasi Midtrans, bukan
+      //    langsung ditandai dibayar karena QR-nya dipindai).
+      if (found.status === 'pending' && found.paymentMethod === 'KASIR_CASH') {
         await doVerify(found, 'paid');
       }
     } catch {
