@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import type { Database } from '../database.types';
 import { toProduct } from '../mappers';
+import { randomUUID } from '../../lib/uuid';
 import type {
   Product,
   ProductInput,
@@ -127,7 +128,7 @@ export class SupabaseProductRepo implements IProductRepository {
 
   async uploadImage(id: string, file: File): Promise<string> {
     const ext = file.name.split('.').pop() ?? 'webp';
-    const path = `${id}/${crypto.randomUUID()}.${ext}`;
+    const path = `${id}/${randomUUID()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from('products')

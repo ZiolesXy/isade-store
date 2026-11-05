@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { QRCodeSVG } from 'qrcode.react';
 import type { Order } from '@/domain/models/Order';
 import { di } from '@/di';
 import { useCheckout } from '@/presentation/hooks/useCheckout';
@@ -157,8 +158,22 @@ export function OrderDetailPage() {
         <p className="mt-1 text-sm text-muted-foreground">{statusMessage(order, countdown)}</p>
 
         {order.status === 'pending' && order.paymentMethod === 'KASIR_CASH' ? (
-          <div className="mt-3 rounded-md bg-muted px-3 py-2 text-sm">
-            Tunjukkan kode pesanan di atas kepada kasir untuk pembayaran tunai.
+          <div className="mt-3 flex flex-col items-center gap-2 rounded-md bg-muted px-3 py-3">
+            <div className="rounded-md bg-white p-2">
+              {/* QR berisi order_id agar kasir cukup memindai lewat halaman Kasir (Kamera). */}
+              <QRCodeSVG
+                value={order.id}
+                size={160}
+                level="M"
+                marginSize={2}
+                title={`QR Code pesanan ${order.id}`}
+                aria-label={`QR Code pesanan ${order.id}`}
+              />
+            </div>
+            <p className="font-mono text-xs">{order.id}</p>
+            <p className="text-center text-sm text-muted-foreground">
+              Tunjukkan QR Code ini kepada kasir untuk pembayaran tunai.
+            </p>
           </div>
         ) : null}
 

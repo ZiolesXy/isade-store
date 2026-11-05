@@ -14,6 +14,7 @@ import { di } from '@/di';
 import { useCartStore, selectCartItems, selectCartTotal } from '@/presentation/stores/useCartStore';
 import { useCheckout } from '@/presentation/hooks/useCheckout';
 import { formatRupiah } from '@/lib/format';
+import { randomUUID } from '@/lib/uuid';
 import { getProductImageUrl } from '@/lib/productImage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -125,7 +126,7 @@ export function CartPage() {
 
     // Kunci idempotensi dipakai ulang kalau request yang sama diulang karena jaringan putus.
     if (!idempotencyKeyRef.current) {
-      idempotencyKeyRef.current = crypto.randomUUID();
+      idempotencyKeyRef.current = randomUUID();
     }
     const snapshot = [...itemsRef.current];
 

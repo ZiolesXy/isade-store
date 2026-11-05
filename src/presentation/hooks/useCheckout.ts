@@ -4,6 +4,7 @@ import { CheckoutUseCase } from '../../application/checkout';
 import type { CartItem } from '../../domain/models/CartItem';
 import { useCartStore } from '../stores/useCartStore';
 import { loadSnap, isSnapReady } from '../../data/midtrans/snapLoader';
+import { randomUUID } from '../../lib/uuid';
 
 export type SnapCallbacks = {
   onPaymentSucceeded?: () => void;
@@ -26,7 +27,7 @@ export function useCheckout(checkoutGateway: ICheckoutGateway, clientKey: string
 
     // Kunci idempotensi dari pemanggil: dipakai ulang saat request yang sama diulang,
     // supaya klik ganda atau jaringan putus tidak membuat dua order.
-    const key = idempotencyKey ?? crypto.randomUUID();
+    const key = idempotencyKey ?? randomUUID();
 
     const input: CreateOrderInput = {
       items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),

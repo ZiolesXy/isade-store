@@ -1,5 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import {
+  Scanner,
+  type IDetectedBarcode,
+  type IScannerError,
+} from '@yudiel/react-qr-scanner';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { Order, OrderStatus } from '@/domain/models/Order';
 import { di } from '@/di';
@@ -30,6 +35,24 @@ import { toast } from 'sonner';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type OtherResult = Exclude<OrderStatus, 'pending'>;
+
+// Dua opsi input kode di Kasir: memindai QR pembeli dengan kamera, atau ketik manual.
+type ScanMode = 'camera' | 'manual';
+
+function describeScannerError(error: IScannerError): string {
+  switch (error.kind) {
+    case 'permission-denied':
+      return 'Akses kamera ditolak. Izinkan kamera di browser atau gunakan input manual.';
+    case 'no-camera':
+      return 'Kamera tidak ditemukan di perangkat ini. Gunakan input manual.';
+    case 'in-use':
+      return 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi itu atau gunakan input manual.';
+    case 'insecure-context':
+      return 'Kamera hanya bisa dipakai di halaman HTTPS. Gunakan input manual.';
+    default:
+      return 'Scanner kamera tidak berhasil dijalankan. Gunakan input manual.';
+  }
+}
 
 async function describeVerifyError(error: unknown): Promise<string> {
   if (error instanceof FunctionsHttpError) {
@@ -64,6 +87,10 @@ export function KasirPage() {
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [catatan, setCatatan] = useState('');
   const [otherResult, setOtherResult] = useState<OtherResult>('needs_review');
+  const [scanMode, setScanMode] = useState<ScanMode>('manual');
+
+  // Kunci anti-duplikat: satu hasil QR hanya diproses sekali meski kamera memancarkan ulang.
+  const scanLockRef = useRef(false);
 
   async function handleScan(event: FormEvent) {
     event.preventDefault();
@@ -92,18 +119,19 @@ export function KasirPage() {
     }
   }
 
-  async function handleVerify(result: 'paid' | OtherResult) {
-    if (!order || verifyBusy) return;
+  // Versi verifikasi yang eksplisit target ordernya, supaya alur hasil scan
+  // bisa langsung memverifikasi tanpa menunggu state `order` diperbarui.
+  async function doVerify(target: Order, result: 'paid' | OtherResult) {
     setVerifyError(null);
     setVerifyBusy(true);
     try {
       const finalStatus = (await verifyPayment({
-        orderId: order.id,
+        orderId: target.id,
         result,
         catatan: catatan.trim() || undefined,
       })) as string;
 
-      const fresh = await di.orderRepository.getById(order.id);
+      const fresh = await di.orderRepository.getById(target.id);
       setOrder(fresh);
       setCatatan('');
 
@@ -119,6 +147,69 @@ export function KasirPage() {
     }
   }
 
+  async function handleVerify(result: 'paid' | OtherResult) {
+    if (!order || verifyBusy) return;
+    await doVerify(order, result);
+  }
+
+  // Alur hasil scan kamera: isi input order_id, matikan kamera,
+  // lalu lacak pesanan. Jika pesanan masih pending, verifikasi langsung
+  // menjadi 'paid' memakai usecase verifikasi kasir yang sudah ada.
+  // (Opsi input manual tetap lewat handleScan yang sudah ada.)
+  function switchScanMode(mode: ScanMode) {
+    scanLockRef.current = false;
+    setScanMode(mode);
+  }
+
+  async function handleQrValue(raw: string) {
+    if (scanLockRef.current || lookupBusy || verifyBusy) return;
+    scanLockRef.current = true;
+
+    const trimmed = raw.trim();
+
+    // 1) Masukkan hasil scan ke input order_id.
+    setCode(trimmed);
+    // 2) Matikan kamera: kembali ke mode input manual (komponen Scanner unmount).
+    setScanMode('manual');
+
+    setLookupError(null);
+    setVerifyError(null);
+    setOrder(null);
+
+    try {
+      if (!UUID_RE.test(trimmed)) {
+        setLookupError('Kode transaksi harus berupa kode pesanan yang valid.');
+        return;
+      }
+
+      // 3) Lacak pesanan lewat repository yang sudah ada (tanpa query DB di UI).
+      setLookupBusy(true);
+      const found = await di.orderRepository.getById(trimmed);
+      if (!found) {
+        setLookupError('Pesanan tidak ditemukan.');
+        return;
+      }
+      setOrder(found);
+
+      // 4) Saat hasil scan dari kamera, verifikasi langsung menjadi 'paid'
+      //    lewat usecase verifikasi kasir (useCashier.verifyPayment).
+      if (found.status === 'pending') {
+        await doVerify(found, 'paid');
+      }
+    } catch {
+      setLookupError('Pesanan tidak berhasil dicari.');
+    } finally {
+      setLookupBusy(false);
+      scanLockRef.current = false;
+    }
+  }
+
+  function handleDetected(detected: IDetectedBarcode[]) {
+    const raw = detected[0]?.rawValue;
+    if (!raw) return;
+    void handleQrValue(raw);
+  }
+
   const isPaid = order?.status === 'paid';
   const isPending = order?.status === 'pending';
   const canVerify = isPending && !verifyBusy;
@@ -130,29 +221,72 @@ export function KasirPage() {
       {/* Focal point: formulir scan dan status verifikasi. */}
       <Card className="rounded-lg">
         <CardContent className="p-4">
-          <form className="flex flex-wrap gap-2" onSubmit={handleScan}>
-            <div className="flex-1">
-              <Label htmlFor="code">Kode transaksi</Label>
-              <Input
-                id="code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="Tempel kode pesanan dari halaman kasir customer"
-                className="font-mono"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" disabled={lookupBusy}>
-                {lookupBusy ? 'Mencari...' : 'Scan Transaksi'}
+          <div className="flex flex-col gap-3">
+            {/* Dua opsi input kode: Gunakan Kamera / Input Manual. */}
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Metode input kode pesanan">
+              <Button
+                type="button"
+                size="sm"
+                variant={scanMode === 'camera' ? 'default' : 'outline'}
+                aria-pressed={scanMode === 'camera'}
+                onClick={() => switchScanMode('camera')}
+              >
+                Gunakan Kamera
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={scanMode === 'manual' ? 'default' : 'outline'}
+                aria-pressed={scanMode === 'manual'}
+                onClick={() => switchScanMode('manual')}
+              >
+                Input Manual
               </Button>
             </div>
-          </form>
 
-          {lookupError ? (
-            <p role="alert" className="mt-3 text-sm text-destructive">
-              {lookupError}
-            </p>
-          ) : null}
+            {scanMode === 'camera' ? (
+              <div>
+                <div className="overflow-hidden rounded-md border">
+                  <Scanner
+                    formats={['qr_code']}
+                    onScan={handleDetected}
+                    onError={(e: IScannerError) => setLookupError(describeScannerError(e))}
+                    classNames={{ container: 'h-72 w-full' }}
+                    paused={lookupBusy || verifyBusy}
+                    sound
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Arahkan kamera ke QR Code pesanan pembeli. Saat terbaca, kode masuk otomatis ke
+                  input order_id dan verifikasi langsung dijalankan.
+                </p>
+              </div>
+            ) : (
+              <form className="flex flex-wrap gap-2" onSubmit={handleScan}>
+                <div className="flex-1">
+                  <Label htmlFor="code">Kode transaksi</Label>
+                  <Input
+                    id="code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Tempel kode pesanan dari halaman kasir customer"
+                    className="font-mono"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" disabled={lookupBusy}>
+                    {lookupBusy ? 'Mencari...' : 'Scan Transaksi'}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {lookupError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {lookupError}
+              </p>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
 
