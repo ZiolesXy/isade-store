@@ -10,6 +10,7 @@ import { formatDateTime, formatRupiah } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/presentation/stores/useAuthStore';
 
 const POLL_INTERVAL_MS = 5000;
 const POLL_MAX_MS = 120000;
@@ -81,6 +82,7 @@ function DetailSkeleton() {
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { openSnap } = useCheckout(di.checkoutGateway, di.midtransClientKey);
+  const { userId, role } = useAuthStore();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,8 +95,15 @@ export function OrderDetailPage() {
   const load = useCallback(async () => {
     if (!id) return;
     setError(null);
+    if (!userId) {
+      setError('Sesi tidak valid. Silakan login lagi.');
+      setLoading(false);
+      return;
+    }
     try {
-      const loaded = await di.orderRepository.getById(id);
+      const isCustomer = role === 'customer';
+      // Pelanggan hanya boleh lihat pesanan sendiri; admin/kasir boleh lihat semua.
+      const loaded = await di.orderRepository.getById(id, isCustomer ? userId : undefined);
       setOrder(loaded);
       if (!loaded) setError('Pesanan tidak ditemukan atau bukan milikmu.');
     } catch {
@@ -102,7 +111,7 @@ export function OrderDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, userId, role]);
 
   useEffect(() => {
     void load();

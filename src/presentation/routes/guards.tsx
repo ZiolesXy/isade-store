@@ -44,6 +44,23 @@ export function RequireAdmin() {
   return <Outlet />;
 }
 
+/** Rute pelanggan: /orders, /orders/:id. Admin dan kasir dialihkan ke halaman admin. */
+export function RequireCustomer() {
+  const sessionReady = useAuthStore((s) => s.sessionReady);
+  const userId = useAuthStore((s) => s.userId);
+  const role = useAuthStore((s) => s.role);
+  const location = useLocation();
+
+  if (!sessionReady) return <SessionLoading />;
+  if (!userId) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+  if (role !== 'customer') {
+    return <Navigate to="/admin/orders" replace />;
+  }
+  return <Outlet />;
+}
+
 /** Rute kasir: /kasir, untuk cashier dan admin. */
 export function RequireCashier() {
   const sessionReady = useAuthStore((s) => s.sessionReady);

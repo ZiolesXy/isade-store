@@ -7,6 +7,7 @@ import { EmptyState, ErrorState, RowSkeleton } from '@/presentation/components/s
 import { formatDateTime, formatRupiah } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
+import { useAuthStore } from '@/presentation/stores/useAuthStore';
 
 const PAGE_SIZE = 10;
 
@@ -17,12 +18,19 @@ export function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { userId } = useAuthStore();
+
   const load = useCallback(async (targetPage: number) => {
     setLoading(true);
     setError(null);
+    if (!userId) {
+      setError('Sesi tidak valid. Silakan login lagi.');
+      setLoading(false);
+      return;
+    }
     try {
       // Minta satu baris ekstra untuk mengetahui ada halaman berikutnya.
-      const rows = await di.orderRepository.listMine(targetPage, PAGE_SIZE + 1);
+      const rows = await di.orderRepository.listMine(targetPage, PAGE_SIZE + 1, userId);
       setHasNext(rows.length > PAGE_SIZE);
       setOrders(rows.slice(0, PAGE_SIZE));
       setPage(targetPage);
@@ -31,7 +39,7 @@ export function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     void load(1);

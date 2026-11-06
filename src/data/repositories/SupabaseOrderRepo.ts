@@ -8,13 +8,14 @@ type OrderRow = Database['public']['Tables']['orders']['Row'];
 type OrderItemRow = Database['public']['Tables']['order_items']['Row'];
 
 export class SupabaseOrderRepo implements IOrderRepository {
-  async listMine(page: number, pageSize: number): Promise<Order[]> {
+  async listMine(page: number, pageSize: number, userId: string): Promise<Order[]> {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
     const { data, error } = await supabase
       .from('orders')
       .select(`*, order_items(*)`)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -27,12 +28,17 @@ export class SupabaseOrderRepo implements IOrderRepository {
     });
   }
 
-  async getById(id: string): Promise<Order | null> {
-    const { data, error } = await supabase
+  async getById(id: string, userId?: string): Promise<Order | null> {
+    let query = supabase
       .from('orders')
       .select(`*, order_items(*)`)
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') return null;
