@@ -619,7 +619,7 @@ Kalau `DESIGN.md` belum diisi, agent wajib memberi label "draft without directio
 
 ```text
 VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 VITE_MIDTRANS_CLIENT_KEY=
 VITE_MIDTRANS_IS_PRODUCTION=false
 ```
@@ -635,7 +635,7 @@ supabase secrets set \
   APP_URL=https://domain-toko
 ```
 
-`SUPABASE_URL`, `SUPABASE_ANON_KEY`, dan `SUPABASE_SERVICE_ROLE_KEY` sudah tersedia otomatis di Edge Function. Tidak ada `FLAT_SHIPPING_COST` (produk digital, tidak ada ongkir).
+`SUPABASE_URL`, `SUPABASE_ANON_KEY` (sekarang `SUPABASE_SECRET_KEY`), dan kunci publishable di frontend sudah sesuai dengan deprecasi Supabase. Silakan perbarui ke `SUPABASE_SECRET_KEY` untuk Edge Functions. Tidak ada `FLAT_SHIPPING_COST` (produk digital, tidak ada ongkir).
 
 ### 10.3 `supabase/config.toml`
 

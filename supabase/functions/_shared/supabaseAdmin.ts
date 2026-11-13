@@ -1,12 +1,12 @@
 // Supabase Admin Client untuk Edge Functions
-// Dideploy dengan service_role key
+// Dideploy dengan secret key
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export function createSupabaseAdminClient() {
-  // Return supabase client dengan service_role key
-  // Di lokal Supabase akan otomatis memiliki SUPABASE_SERVICE_ROLE_KEY
+  // Return supabase client dengan secret key
+  // Di lokal Supabase akan otomatis memiliki SUPABASE_SECRET_KEY
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const supabaseKey = Deno.env.get("SUPABASE_SECRET_KEY") || "";
 
   if (!supabaseUrl || !supabaseKey) {
     // Fallback: return minimal client
@@ -21,7 +21,7 @@ export function createSupabaseAdminClient() {
     };
   }
 
-  // Create supabase client with service_role key
+  // Create supabase client dengan secret key
   // @ts-ignore - Supabase JS client
   const supabase = createClient(supabaseUrl, supabaseKey, {
     global: {

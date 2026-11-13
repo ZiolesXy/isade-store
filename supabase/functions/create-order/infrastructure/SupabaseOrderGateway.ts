@@ -10,13 +10,13 @@ import {
 export class SupabaseOrderGateway implements OrderGateway {
   private createClient() {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY tidak tersedia");
+    const supabaseSecretKey = Deno.env.get("SUPABASE_SECRET_KEY") || "";
+    if (!supabaseUrl || !supabaseSecretKey) {
+      throw new Error("SUPABASE_URL / SUPABASE_SECRET_KEY tidak tersedia");
     }
-    return createClient(supabaseUrl, serviceRoleKey, {
+    return createClient(supabaseUrl, supabaseSecretKey, {
       global: {
-        headers: { Authorization: `Bearer ${serviceRoleKey}` },
+        headers: { Authorization: `Bearer ${supabaseSecretKey}` },
       },
     });
   }

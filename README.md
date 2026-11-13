@@ -30,12 +30,12 @@ Salin `.env.example` ke `.env.local` (client) dan set secret Edge Function lewat
 
 | Variabel | Sisi | Keterangan |
 |---|---|---|
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | client | wajib |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | client | wajib |
 | `VITE_MIDTRANS_CLIENT_KEY`, `VITE_MIDTRANS_IS_PRODUCTION` | client | Midtrans Snap |
 | `VITE_ENABLE_MIDTRANS` | client | `true` = checkout menawarkan Midtrans + kasir; `false` = hanya bayar di kasir (parse ketat, selain `true`/`false` dianggap `false` + peringatan) |
 | `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION` | Edge Functions | kredensial Midtrans |
 | `ENABLE_MIDTRANS` | Edge Functions | server menolak `payment_method=WEB_MIDTRANS` (403 `MIDTRANS_DISABLED`) saat `false`; webhook tetap menerima transaksi lama; kunci Midtrans tidak wajib saat `false` |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Edge Functions | klien service role |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | Edge Functions | klien service role |
 | `ORDER_TTL_MINUTES`, `ALLOWED_ORIGINS`, `APP_URL` | Edge Functions | TTL pesanan, CORS, URL callback |
 
 ## Edge Functions

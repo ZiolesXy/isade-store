@@ -41,11 +41,11 @@ export async function verifyPaymentCashierUseCase(
   //    is_cashier() di dalam RPC membaca auth.uid() dari caller JWT.
   const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   const url = Deno.env.get("SUPABASE_URL") || "";
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-  if (!url || !anonKey) {
-    throw new Error("INTERNAL_SUPABASE_CONFIG: SUPABASE_URL / SUPABASE_ANON_KEY tidak tersedia");
+  const supabaseSecretKey = Deno.env.get("SUPABASE_SECRET_KEY") || "";
+  if (!url || !supabaseSecretKey) {
+    throw new Error("INTERNAL_SUPABASE_CONFIG: SUPABASE_URL / SUPABASE_SECRET_KEY tidak tersedia");
   }
-  const supabase = createClient(url, anonKey, {
+  const supabase = createClient(url, supabaseSecretKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
 
