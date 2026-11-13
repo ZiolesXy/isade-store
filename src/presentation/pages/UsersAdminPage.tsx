@@ -92,7 +92,7 @@ export function UsersAdminPage() {
     try {
       const { data, error: updateError } = await supabase
         .from('profiles')
-        .update({ id: admin.id, role: nextRole })
+        .update({ role: nextRole })
         .eq('id', admin.id)
         .select()
         .single();
@@ -117,7 +117,7 @@ export function UsersAdminPage() {
     try {
       const { data, error: updateError } = await supabase
         .from('profiles')
-        .update({ id: admin.id, is_active: !admin.is_active })
+        .update({ is_active: !admin.is_active })
         .eq('id', admin.id)
         .select()
         .single();

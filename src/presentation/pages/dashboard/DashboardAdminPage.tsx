@@ -233,9 +233,9 @@ export default function DashboardAdminPage() {
                   <li>Gagal: {view.problems.failed}</li>
                   <li>Kedaluwarsa: {view.problems.expired}</li>
                 </ul>
-                <p className="mt-1 text-xs text-muted-foreground">
+                {/* <p className="mt-1 text-xs text-muted-foreground">
                   Sumber: orders per status (pending, needs_review, failed, expired).
-                </p>
+                </p> */}
                 <Button asChild variant="outline" size="sm" className="mt-3">
                   <Link to="/tinjau-pembayaran">
                     Tinjau pembayaran
@@ -253,9 +253,9 @@ export default function DashboardAdminPage() {
                     <li>Midtrans: {methodSplit().midtrans} transaksi</li>
                     <li>Kasir (tunai): {methodSplit().cash} transaksi</li>
                   </ul>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  {/* <p className="mt-1 text-xs text-muted-foreground">
                     Sumber: orders status=paid, payment_method bulan ini.
-                  </p>
+                  </p> */}
                 </CardContent>
               </Card>
             ) : (
@@ -289,9 +289,9 @@ export default function DashboardAdminPage() {
                     ))}
                   </ol>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground">
+                {/* <p className="mt-1 text-xs text-muted-foreground">
                   Sumber: order_items dari orders status=paid bulan ini.
-                </p>
+                </p> */}
               </CardContent>
             </Card>
 
@@ -313,9 +313,9 @@ export default function DashboardAdminPage() {
                     ))}
                   </ul>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground">
+                {/* <p className="mt-1 text-xs text-muted-foreground">
                   Sumber: payment_events source=cashier (terbaru dulu).
-                </p>
+                </p> */}
               </CardContent>
             </Card>
           </div>

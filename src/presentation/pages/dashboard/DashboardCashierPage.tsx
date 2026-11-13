@@ -88,9 +88,9 @@ export default function DashboardCashierPage() {
             <p className="font-display text-2xl font-bold">
               {txCount === null ? '-' : String(txCount)}
             </p>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Sumber: pesanan status=paid, metode=KASIR_CASH, paid_at hari ini.
-            </p>
+            </p> */}
           </CardContent>
         </Card>
         <Card className="rounded-lg">
@@ -99,9 +99,9 @@ export default function DashboardCashierPage() {
             <p className="font-display text-2xl font-bold">
               {cashTotal === null ? '-' : formatRupiah(cashTotal)}
             </p>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Sumber: sama dengan kartu sebelah (penjumlahan total_amount).
-            </p>
+            </p> */}
           </CardContent>
         </Card>
       </div>
