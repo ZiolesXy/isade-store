@@ -26,6 +26,7 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ProdukAdminPage } from '../pages/ProdukAdminPage';
 import { PaymentsReviewPage } from '../pages/PaymentsReviewPage';
 import { UsersAdminPage } from '../pages/UsersAdminPage';
+import { AuditLogPage } from '../pages/AuditLogPage';
 import { SettingPage } from '../pages/SettingPage';
 
 /** Redirect dari route lama (PRD v2) ke peta route baru (PLAN-UPDATE-v3). */
@@ -84,6 +85,7 @@ export function AppRoutes() {
             <Route path="/produk" element={<ProdukAdminPage />} />
             <Route path="/tinjau-pembayaran" element={<PaymentsReviewPage />} />
             <Route path="/users" element={<UsersAdminPage />} />
+            <Route path="/audit-log" element={<AuditLogPage />} />
             <Route path="/setting" element={<SettingPage />} />
           </Route>
         </Route>

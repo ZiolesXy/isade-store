@@ -274,8 +274,7 @@ export function OrderDetailPage() {
                 : 'Bayar di Kasir (Cash)'}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Pesanan dibuat {formatDateTime(order.createdAt)} &middot; Pengumuman status selalu dibaca
-            dari database, bukan dari notifikasi browser.
+            Pesanan dibuat {formatDateTime(order.createdAt)}
           </p>
           <div className="mt-2">
             <Button asChild variant="outline" size="sm">

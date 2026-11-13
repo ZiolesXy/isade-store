@@ -5,7 +5,7 @@ import {
   ClipboardText,
   Gear,
   Package,
-  Queue,
+  Scroll,
   SquaresFour,
   Storefront,
   Users,
@@ -36,7 +36,6 @@ export const NAV_USER: NavItem[] = [
 export const NAV_CASHIER: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: SquaresFour },
   { to: '/cashier', label: 'Panel Kasir', icon: CashRegister },
-  { to: '/dashboard#antrian', label: 'Antrian Bayar', icon: Queue },
 ];
 
 export const NAV_ADMIN: NavItem[] = [
@@ -45,5 +44,6 @@ export const NAV_ADMIN: NavItem[] = [
   { to: '/cashier', label: 'Cashier', icon: CashRegister },
   { to: '/tinjau-pembayaran', label: 'Tinjau Pembayaran', icon: ClipboardText },
   { to: '/users', label: 'Users', icon: Users },
+  { to: '/audit-log', label: 'Audit Log', icon: Scroll },
   { to: '/setting', label: 'Setting', icon: Gear },
 ];

@@ -50,7 +50,7 @@ Migrasi di `supabase/migrations/`. Poin penting v3:
 
 - Role enum `user | cashier | admin` (rename dari `customer`), default `user`
 - `profiles.is_active` — nonaktifkan akun; sesi akun nonaktif langsung ditandai keluar
-- `audit_log` — trigger otomatis untuk kelola produk dan perubahan role/is_active (siapa, kapan, isi sebelum/sesudah); baca khusus admin
+- `audit_log` — trigger otomatis untuk kelola produk dan perubahan role/is_active (siapa, kapan, isi sebelum/sesudah); baca khusus admin lewat halaman `/audit-log`
 - Policy `profiles_update_admin` + grant kolom `role`, `is_active`
 
 ## Perintah
