@@ -210,7 +210,7 @@ export function CartPage() {
     <section className="mx-auto max-w-6xl px-4 py-6">
       <h1 className="mb-4 font-display text-xl font-bold">Keranjang</h1>
 
-      <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-3">
           {reconcileError ? (
             <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/40 bg-white px-4 py-3">
@@ -262,7 +262,7 @@ export function CartPage() {
                       </p>
                     ) : null}
 
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                       <div className="flex items-center rounded-md border">
                         <Button
                           type="button"
@@ -288,7 +288,7 @@ export function CartPage() {
                           <Plus className="size-3.5" weight="bold" />
                         </Button>
                       </div>
-                      <p className="ml-auto text-sm font-semibold">
+                      <p className="ml-auto whitespace-nowrap text-sm font-semibold">
                         {formatRupiah(item.unitPrice * item.quantity)}
                       </p>
                       <Button

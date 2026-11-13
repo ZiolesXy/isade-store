@@ -61,7 +61,15 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             onClick={() => onAddToCart(product)}
           >
             <Plus className="size-4" weight="bold" />
-            {outOfStock ? 'Stok habis' : 'Tambah ke Keranjang'}
+            {outOfStock ? (
+              'Stok habis'
+            ) : (
+              <>
+                {/* Layar sempit: label pendek agar tidak kepotong di grid 2 kolom. */}
+                <span className="sm:hidden">Tambah</span>
+                <span className="hidden sm:inline">Tambah ke Keranjang</span>
+              </>
+            )}
           </Button>
         </div>
       </div>
