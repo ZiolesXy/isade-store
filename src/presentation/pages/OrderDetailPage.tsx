@@ -7,6 +7,7 @@ import { useCheckout } from '@/presentation/hooks/useCheckout';
 import { OrderStatusBadge, STATUS_LABEL } from '@/presentation/components/OrderStatusBadge';
 import { ErrorState } from '@/presentation/components/states';
 import { formatDateTime, formatRupiah } from '@/lib/format';
+import { hasRole } from '@/lib/roles';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -101,9 +102,9 @@ export function OrderDetailPage() {
       return;
     }
     try {
-      const isCustomer = role === 'customer';
-      // Pelanggan hanya boleh lihat pesanan sendiri; admin/kasir boleh lihat semua.
-      const loaded = await di.orderRepository.getById(id, isCustomer ? userId : undefined);
+      // User biasa hanya boleh lihat pesanan sendiri; admin/kasir boleh lihat semua.
+      const isOwnOnly = !hasRole(role, 'cashier');
+      const loaded = await di.orderRepository.getById(id, isOwnOnly ? userId : undefined);
       setOrder(loaded);
       if (!loaded) setError('Pesanan tidak ditemukan atau bukan milikmu.');
     } catch {
@@ -278,7 +279,7 @@ export function OrderDetailPage() {
           </p>
           <div className="mt-2">
             <Button asChild variant="outline" size="sm">
-              <Link to="/orders">Semua pesanan</Link>
+              <Link to="/dashboard">Ke dashboard</Link>
             </Button>
           </div>
         </dl>

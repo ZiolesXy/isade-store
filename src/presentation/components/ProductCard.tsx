@@ -22,7 +22,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border bg-card">
       <Link
-        to={`/products/${product.slug}`}
+        to={`/katalog/${product.slug}`}
         className="block aspect-square w-full overflow-hidden bg-muted"
         aria-label={`Lihat detail ${product.title}`}
       >
@@ -42,7 +42,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
       <div className="flex flex-1 flex-col gap-1 p-3">
         <Link
-          to={`/products/${product.slug}`}
+          to={`/katalog/${product.slug}`}
           className="line-clamp-2 font-medium text-foreground hover:underline"
         >
           {product.title}

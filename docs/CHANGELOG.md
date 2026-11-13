@@ -206,3 +206,125 @@ Rincian:
 Bukti verifikasi:
 
 ---
+
+## [Tahap 1] Role & Routing — 2026-11-13
+
+Status: selesai
+
+### Dikerjakan
+- Sumber kebenaran role: `profiles.role` diubah ke enum `user | cashier | admin` (migrasi rename dari `customer`: update baris, ganti check constraint, default `user`). Helper client `src/lib/roles.ts`: `isRole`, `hasRole` (admin lolos semua guard cashier; admin bukan user biasa), `ROLE_LABEL`.
+- `profiles.is_active` (default true) untuk penonaktifan akun; `authSession` memaksa sign-out saat profil nonaktif. `useAuthStore` menambah `fullName`, `isUser`, role bertipe `Role | null`.
+- Guard dua lapis: guard UI baru (`RequireRole(roles)` → halaman **403** jelas bila role kurang, redirect `/login` + state `from` bila belum login; `RequireUserRole/RequireCashierRole/RequireAdminRole`) — keamanan asli tetap di RLS dan cek role Edge Functions.
+- Peta route baru: `/` + `/katalog(/:slug)`, `/cart`, `/login` (publik); `/dashboard` (satu route, tampilan dipilih dari role); `/akun`, `/akun/pesanan/:id` (user); `/cashier` (cashier+admin); `/produk`, `/tinjau-pembayaran`, `/users`, `/setting` (admin); `/logout`.
+- Redirect route lama tetap hidup: `/products/:slug` → `/katalog/:slug`, `/orders(/:id)` → `/dashboard` / `/akun/pesanan/:id`, `/kasir` → `/cashier`, `/admin/*` → `/produk` | `/tinjau-pembayaran`.
+- Layout per grup route (`src/presentation/routes/layouts.tsx`) + navbar tiga komponen terpisah (`NavbarUser`, `NavbarCashier`, `NavbarAdmin`) dan `NavbarPublic`, dipasang dari `navConfig.ts` (label, route, ikon; dipakai untuk navbar sekaligus daftar item akses). Keranjang/checkout tidak ada di navbar cashier/admin. Admin di `/cashier` melihat navbar cashier + tombol "Kembali ke admin". Navbar global lama dihapus dari `App.tsx`.
+- Halaman 403 baru (`ForbiddenPage`) dengan tautan ke dashboard/katalog.
+
+### File utama yang berubah
+- `supabase/migrations/20261113090000_role_user_rename_is_active_audit.sql` (baru), `src/data/database.types.ts`, `src/data/mappers.ts`
+- `src/lib/roles.ts` (baru), `src/presentation/routes/{AppRoutes,guards,layouts}.tsx`, `src/App.tsx`
+- `src/presentation/components/nav/` (baru: `navConfig.ts`, `shared.tsx`, `NavbarPublic|User|Cashier|Admin.tsx`); `components/Navbar.tsx` (hapus)
+- `src/presentation/pages/{ForbiddenPage,LogoutPage,AccountPage,OrderDetailPage,LoginPage,CartPage,ProductDetailPage,ProdukAdminPage,PaymentsReviewPage}.tsx`
+- `src/presentation/stores/{useAuthStore,authSession}.ts`, `supabase/functions/_shared/auth.ts` (default role `user`), `supabase/tests/role_user_migration_check.sql`
+
+### Keputusan & catatan
+- Role tetap disimpan `text` dengan check constraint (bukan tipe enum PG) agar konsisten skema lama.
+- `/akun` diproteksi khusus role `user` (cashier/admin diarahkan 403) sesuai matriks akses; menu akun cashier/admin hanya nama + keluar.
+- Detail pesanan user pindah ke `/akun/pesanan/:id`; `OrderDetailPage` memakai `hasRole(role,'cashier')` untuk membedakan akses lihat-semua.
+- Login tanpa tujuan asal kini default ke `/dashboard`.
+
+### Belum / ditunda
+- Navigasi aktif untuk item dengan hash (`/dashboard#antrian`) mengikuti pencocokan path NavLink.
+- Sitemap SEO/lint depth route tidak dicek (di luar lingkup).
+
+---
+
+## [Tahap 2] Env `ENABLE_MIDTRANS` — 2026-11-13
+
+Status: selesai
+
+### Dikerjakan
+- `.env.example`: `VITE_ENABLE_MIDTRANS` (client) dan `ENABLE_MIDTRANS` (Edge Functions) dengan komentar; `.env.local` dan `supabase/functions/.env` diisi `true` untuk perilaku saat ini.
+- Modul config satu pintu: `src/lib/config.ts` mengekspor `isMidtransEnabled` + `parseMidtransFlag` (parse ketat: selain `"true"`/`"false"` dianggap `false` + `console.warn` saat boot). Tidak ada komponen lain yang membaca env flag langsung.
+- Checkout (`CartPage`) menampilkan pilihan pembayaran dari `isMidtransEnabled`: `false` → hanya "Bayar di Kasir" (tidak ada tombol Midtrans tersembunyi); `true` → dua pilihan.
+- Penegakan server: `create-order` membaca `ENABLE_MIDTRANS` sendiri; `payment_method=WEB_MIDTRANS` saat `false` ditolak **403 MIDTRANS_DISABLED** sebelum order dibuat, walau client memaksa metode Midtrans. Webhook Midtrans tidak berubah (transaksi lama tetap diproses). Saat `false`, gateway Midtrans tidak dibuat — kunci kosong tidak membuat crash.
+- Client memetakan kode `MIDTRANS_DISABLED` ke `MidtransDisabledError` (domain) + pesan UI yang jelas.
+
+### File utama yang berubah
+- `.env.example`, `.env.local`, `supabase/functions/.env` (lokal)
+- `src/lib/config.ts` (baru), `src/domain/errors.ts`, `src/data/repositories/SupabaseCheckoutGateway.ts`, `src/presentation/pages/CartPage.tsx`
+- `supabase/functions/create-order/index.ts`, `supabase/functions/_shared/auth.ts`
+
+### Keputusan & catatan
+- Karena ini SPA, "nilai dari server" untuk UI diimplementasikan sebagai `VITE_ENABLE_MIDTRANS` (dibake saat build); keamanan tetap di server karena Edge Function menolak metode Midtrans saat flag `false` — nilai client tidak bisa menembus.
+- Nilai default bila env tidak diset: **false** (fail-closed) dengan peringatan di console.
+
+### Belum / ditunda
+- `/setting` hanya membaca status dari config (sesuai plan); mekanisme redeploy otomatis tidak dibuat.
+
+---
+
+## [Tahap 3] Dashboard untuk tiga role + halaman admin — 2026-11-13
+
+Status: selesai
+
+### Dikerjakan
+- `/dashboard` satu route: `DashboardPage` memilih `DashboardUser` / `DashboardCashier` / `DashboardAdmin` dari role sesi (bukan query string). Ketiganya **lazy-loaded** terpisah (chunk `DashboardUserPage/DashboardCashierPage/DashboardAdminPage` di output build) sehingga kode dashboard role lain tidak masuk bundle role aktif; tidak ada data admin yang diambil user biasa (query client tetap dibatasi RLS).
+- DashboardUser: pesanan aktif di atas dengan aksi "Bayar sekarang" (Midtrans aktif + snap token) / "Tunjukkan ke kasir" (QR di `/akun/pesanan/:id`), riwayat pesanan, tautan `/akun`.
+- DashboardCashier: tombol besar ke `/cashier`, antrian pesanan `pending` + `KASIR_CASH` urut waktu (section `#antrian`), ringkasan shift hari ini (jumlah transaksi tunai dan total tunai terkonfirmasi, sumber ditulis di kartu).
+- DashboardAdmin: penjualan lunas hari ini / 7 hari / bulan ini; kartu pembayaran tertunda & bermasalah (pending/needs_review/failed/expired) → tautan `/tinjau-pembayaran`; perbandingan Midtrans vs kasir hanya bila `isMidtransEnabled`; produk terlaris (order_items dari pesanan lunas bulan ini); aktivitas kasir terbaru (`payment_events` source=cashier); pintasan `/produk`, `/cashier`, `/users`, `/setting`. Setiap kartu mencantumkan sumber query-nya.
+- `/produk` (`ProdukAdminPage`): kelola produk digital dengan cari (judul/slug) dan filter status aktif/nonaktif; tambah/ubah/nonaktifkan. Produk tidak dihapus permanen; harga disimpan sebagai `unit_price` snapshot di order item sehingga perubahan harga tidak menyentuh pesanan lama. `listAdmin` diperluas dengan `AdminProductFilter`.
+- `/tinjau-pembayaran` (`PaymentsReviewPage`): tab status (Perlu Ditinjau, Menunggu, Gagal, Kedaluwarsa, Dikonfirmasi Kasir = paid + KASIR_CASH), dialog detail dengan catatan audit `payment_events` (sumber, status, waktu), aksi setujui/tolak + catatan.
+- `/users` (`UsersAdminPage`): daftar user (RLS cashier/admin), cari nama/id, ubah role via select, nonaktifkan/aktifkan; admin terakhir tidak bisa menurunkan role dirinya sendiri; admin tidak bisa menonaktifkan dirinya; perubahan role diri sendiri langsung disinkronkan ke auth store.
+- `/setting` (`SettingPage`): info toko + status Midtrans (Aktif/Nonaktif) read-only dari `isMidtransEnabled` + penjelasan env.
+- `/akun` (`AccountPage`): email, role, ubah nama sendiri (grant `full_name` sudah ada).
+- Audit log: tabel `audit_log` + trigger `write_audit_log` (security definer) pada insert/update/delete `products` dan update `role, is_active` `profiles` — aksi sensitif (ubah produk/harga, ubah role, nonaktif akun) tercatat otomatis dengan aktor dan waktu; RLS baca khusus admin.
+- Tanpa pg_cron: kedaluwarsa tetap dihitung dari timestamp saat dibaca/webhook.
+
+### File utama yang berubah
+- `src/presentation/pages/dashboard/` (baru: `DashboardPage`, `DashboardUserPage`, `DashboardCashierPage`, `DashboardAdminPage`)
+- `src/presentation/pages/{ProdukAdminPage,PaymentsReviewPage,UsersAdminPage,SettingPage,AccountPage}.tsx` (baru); `AdminProductsPage/AdminOrdersPage/AdminNeedsReviewPage` (hapus, digantikan)
+- `src/domain/repositories/IProductRepository.ts`, `src/data/repositories/SupabaseProductRepo.ts`
+- `supabase/migrations/20261113090000_...sql` (audit_log + trigger bersama Tahap 1), `src/data/database.types.ts`
+
+### Keputusan & catatan
+- Query dashboard dilakukan langsung di sisi client (pola `useOrder`/`useCashier` yang sudah ada) dan selalu dibatasi RLS: user hanya melihat data miliknya; admin/cashier lewat `is_cashier()`.
+- "Dikonfirmasi kasir" di halaman tinjau didefinisikan sebagai pesanan `paid` bermetode `KASIR_CASH`; detail `payment_events` menunjukkan jejak audit per transaksi.
+- Ringkasan shift kasir menghitung `paid_at >= mulai hari ini (zona browser)`, `status=paid`, `payment_method=KASIR_CASH`.
+
+### Belum / ditunda
+- Halaman `/users` belum menampilkan email user lain (butuh RPC service-role; nama + id cukup untuk identifikasi).
+- Ekspor/laporan unduhan tidak termasuk lingkup plan.
+
+---
+
+## [Tahap 4] Pengujian & penutup — 2026-11-13
+
+Status: selesai (uji otomatis + SQL lokal; uji browser end-to-end menunggu Tahap 6 PRD)
+
+### Dikerjakan
+- Uji unit baru: `src/lib/roles.test.ts` (matriks `hasRole`: user/cashier/admin × guard user/cashier/admin, termasuk admin lolos guard cashier) dan `src/lib/config.test.ts` (parse ketat flag: `"true"`, `"false"`, nilai lain, tidak diset). Total `npm test`: 6 berkas, 46/46 lulus.
+- Uji migrasi SQL (`supabase/tests/role_user_migration_check.sql`, dijalankan lokal): default profile baru `user` + `is_active=true`, update ke `cashier` berhasil, nilai `customer` ditolak check constraint, trigger audit mencatat perubahan role (UPDATE/profiles/role baru), user uji dibersihkan. `supabase db reset` sukses menerapkan semua migrasi dari nol.
+- Matriks akses UI diterapkan lewat guard (`RequireUserRole/RequireCashierRole/RequireAdminRole` → 403) dan API tetap dijaga RLS + cek role di `cashier-verify`/`create-order`; alur kasir, admin masuk `/cashier`, dan dua mode env memakai jalur kode yang sudah diuji sebelumnya (verifikasi penuh di browser masuk Tahap 6).
+- README diperbarui: ringkasan proyek, stack, tabel role & route, tabel env (termasuk `ENABLE_MIDTRANS`/`VITE_ENABLE_MIDTRANS`), Edge Functions, migrasi v3, perintah.
+- `.env.example` dan `supabase/functions/.env` sesuai Tahap 2.
+
+### File utama yang berubah
+- `src/lib/roles.test.ts`, `src/lib/config.test.ts`, `supabase/tests/role_user_migration_check.sql`, `README.md`, `docs/CHANGELOG.md`
+
+### Keputusan & catatan
+- Lint (`npm run lint`) 0 error; peringatan yang tersisa adalah gaya pre-existing (`set-state-in-effect`, `only-export-components`) plus beberapa di halaman baru dengan pola yang sama dengan kode lama.
+
+### Belum / ditunda
+- Click-through browser 3 role × semua route (UI nyata + QR scan kamera) ditunda ke Tahap 6 yang memang belum selesai.
+- Uji `ENABLE_MIDTRANS=false` end-to-end butuh deploy Edge Function dengan env tersebut (secara kode sudah ditangani: 403 MIDTRANS_DISABLED, webhook tetap jalan).
+
+---
+
+## Ringkasan PLAN-UPDATE-v3 (Tahap 1-4)
+
+- Satu route `/dashboard` untuk tiga role dengan tampilan + data + navbar per role; admin ⊃ cashier ditegakkan di client (`hasRole`), SQL (`is_admin`/`is_cashier`), dan Edge Functions.
+- Flag `ENABLE_MIDTRANS` parse ketat; `false` = hanya bayar di kasir, ditolak juga di server (403), webhook tetap melayani transaksi lama.
+- Halaman admin baru: `/produk` (cari + filter), `/tinjau-pembayaran` (filter status + catatan audit), `/users` (ubah role, nonaktifkan, proteksi admin terakhir), `/setting` (status read-only).
+- `audit_log` otomatis (trigger) untuk kelola produk dan perubahan role/status akun; `payment_events` tetap menjadi jejak pembayaran.
+- Sengaja ditunda: verifikasi browser end-to-end (Tahap 6 PRD), tampilan email user lain di `/users`, ekspor laporan.

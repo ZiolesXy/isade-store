@@ -6,6 +6,7 @@ import {
   CreateOrderInput,
   CreateOrderWebResponse,
   CreateOrderCashResponse,
+  PaymentGatewayError,
 } from "./domain/entities.ts";
 import { CreateOrderUseCase } from "./application/CreateOrderUseCase.ts";
 import { SupabaseOrderGateway } from "./infrastructure/SupabaseOrderGateway.ts";
@@ -15,11 +16,32 @@ const MIDTRANS_SERVER_KEY = Deno.env.get("MIDTRANS_SERVER_KEY") || "";
 const MIDTRANS_CLIENT_KEY = Deno.env.get("MIDTRANS_CLIENT_KEY") || "";
 const IS_PRODUCTION = Deno.env.get("MIDTRANS_IS_PRODUCTION") === "true";
 
-const gateway = new MidtransPaymentGateway({
-  serverKey: MIDTRANS_SERVER_KEY,
-  clientKey: MIDTRANS_CLIENT_KEY,
-  isProduction: IS_PRODUCTION,
-});
+// Flag ENABLE_MIDTRANS (PLAN-UPDATE-v3 Tahap 2). Parse ketat:
+// selain "true"/"false" dianggap false dan dicatat sebagai peringatan.
+const ENABLE_MIDTRANS_RAW = Deno.env.get("ENABLE_MIDTRANS");
+const MIDTRANS_ENABLED = ENABLE_MIDTRANS_RAW === "true";
+if (ENABLE_MIDTRANS_RAW !== "true" && ENABLE_MIDTRANS_RAW !== "false") {
+  console.warn(
+    `[create-order] ENABLE_MIDTRANS="${ENABLE_MIDTRANS_RAW ?? "tidak diset"}" tidak valid; dianggap false.`
+  );
+}
+
+// Saat flag false, kunci Midtrans tidak wajib ada: gateway asli tidak dibuat,
+// tidak ada pemanggilan ke Midtrans, aplikasi tidak crash karena kunci kosong.
+const gateway = MIDTRANS_ENABLED
+  ? new MidtransPaymentGateway({
+      serverKey: MIDTRANS_SERVER_KEY,
+      clientKey: MIDTRANS_CLIENT_KEY,
+      isProduction: IS_PRODUCTION,
+    })
+  : {
+      createSnapTransaction: (): Promise<{ token: string; redirect_url: string }> =>
+        Promise.reject(
+          new PaymentGatewayError(
+            "Midtrans dinonaktifkan lewat ENABLE_MIDTRANS=false"
+          )
+        ),
+    };
 
 const orderGateway = new SupabaseOrderGateway();
 
@@ -55,6 +77,18 @@ serve(
         "payment_method wajib WEB_MIDTRANS atau KASIR_CASH",
         { payment_method: "pilihan WEB_MIDTRANS atau KASIR_CASH" },
         400
+      );
+    }
+
+    // Penegakan flag di server (Tahap 2): walau client mengirim
+    // payment_method=midtrans, request ditolak saat flag false (403).
+    // Webhook Midtrans tidak terpengaruh: transaksi lama tetap diproses.
+    if (body.payment_method === "WEB_MIDTRANS" && !MIDTRANS_ENABLED) {
+      return errorResponse(
+        "MIDTRANS_DISABLED",
+        "Pembayaran Midtrans sedang dinonaktifkan. Gunakan bayar di kasir.",
+        {},
+        403
       );
     }
 

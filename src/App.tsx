@@ -1,13 +1,13 @@
 import { BrowserRouter } from 'react-router';
-import { Navbar } from './presentation/components/Navbar';
 import { AppRoutes } from './presentation/routes/AppRoutes';
 import { Toaster } from './components/ui/sonner';
 
+// Navbar tidak lagi dipasang global: tiap grup route memasang navbar role-nya
+// masing-masing lewat layout (lihat presentation/routes/layouts.tsx).
 export default function App() {
   return (
     <BrowserRouter>
       <div className="flex min-h-screen flex-col">
-        <Navbar />
         <main className="flex-1">
           <AppRoutes />
         </main>

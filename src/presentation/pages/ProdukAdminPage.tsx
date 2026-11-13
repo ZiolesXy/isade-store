@@ -18,6 +18,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -56,12 +63,14 @@ function slugifyTitle(title: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-export function AdminProductsPage() {
+export function ProdukAdminPage() {
   const [rows, setRows] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -76,7 +85,15 @@ export function AdminProductsPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await di.productRepository.listAdmin(targetPage, PAGE_SIZE);
+      const result = await di.productRepository.listAdmin(targetPage, PAGE_SIZE, {
+        search: search.trim() || undefined,
+        isActive:
+          statusFilter === 'active'
+            ? true
+            : statusFilter === 'inactive'
+              ? false
+              : undefined,
+      });
       setRows(result.products);
       setPage(targetPage);
       setTotalPages(Math.max(1, Math.ceil(result.total / PAGE_SIZE)));
@@ -85,7 +102,7 @@ export function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search, statusFilter]);
 
   useEffect(() => {
     void load(1);
@@ -237,6 +254,29 @@ export function AdminProductsPage() {
         </Button>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari judul atau slug..."
+          className="max-w-xs"
+          aria-label="Cari produk"
+        />
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}
+        >
+          <SelectTrigger className="w-40 bg-white" aria-label="Filter status produk">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua status</SelectItem>
+            <SelectItem value="active">Aktif</SelectItem>
+            <SelectItem value="inactive">Nonaktif</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {loading ? (
         <RowSkeleton rows={4} />
       ) : error ? (
@@ -276,7 +316,7 @@ export function AdminProductsPage() {
                     </TableCell>
                     <TableCell>
                       <Link
-                        to={`/products/${product.slug}`}
+                        to={`/katalog/${product.slug}`}
                         className="line-clamp-1 font-medium hover:underline"
                       >
                         {product.title}
@@ -460,7 +500,7 @@ export function AdminProductsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
                   className="size-4 accent-[#302b8f]"
                 />
-                Produk aktif (tampil di katalog customer)
+                Produk aktif (tampil di katalog pelanggan)
               </label>
             ) : (
               <label className="flex items-center gap-2 text-sm">
@@ -470,7 +510,7 @@ export function AdminProductsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
                   className="size-4 accent-[#302b8f]"
                 />
-                Langsung aktif (tampil di katalog customer)
+                Langsung aktif (tampil di katalog pelanggan)
               </label>
             )}
 

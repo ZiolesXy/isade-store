@@ -7,6 +7,7 @@ import {
   ProductUnavailableError,
   TooManyPendingOrdersError,
   PaymentGatewayError,
+  MidtransDisabledError,
   ValidationError,
 } from '../../domain/errors';
 
@@ -61,6 +62,8 @@ function mapErrorBody(err: CreateOrderErrorBody['error']): never {
       throw new TooManyPendingOrdersError();
     case 'PAYMENT_GATEWAY_ERROR':
       throw new PaymentGatewayError(err.message || 'Gateway pembayaran gagal');
+    case 'MIDTRANS_DISABLED':
+      throw new MidtransDisabledError();
     case 'VALIDATION_ERROR':
       throw new ValidationError(err.message, Object.keys(err.fields || {})[0]);
     default:

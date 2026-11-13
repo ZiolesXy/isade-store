@@ -6,11 +6,13 @@ import type { CartChange } from '@/application/cart';
 import type { PaymentMethod } from '@/domain/models/Order';
 import {
   PaymentGatewayError,
+  MidtransDisabledError,
   ProductUnavailableError,
   StockConflictError,
   TooManyPendingOrdersError,
 } from '@/domain/errors';
 import { di } from '@/di';
+import { isMidtransEnabled } from '@/lib/config';
 import { useCartStore, selectCartItems, selectCartTotal } from '@/presentation/stores/useCartStore';
 import { useCheckout } from '@/presentation/hooks/useCheckout';
 import { formatRupiah } from '@/lib/format';
@@ -51,10 +53,40 @@ function mapCheckoutError(
   if (error instanceof PaymentGatewayError) {
     return { heading: 'Pembayaran Midtrans gagal dimulai.', lines: ['Coba bayar lagi.'] };
   }
+  if (error instanceof MidtransDisabledError) {
+    return {
+      heading: 'Pembayaran Midtrans sedang nonaktif.',
+      lines: ['Pilih Bayar di Kasir.'],
+    };
+  }
   if (error instanceof Error && error.message === 'Keranjang kosong') {
     return { heading: 'Keranjang masih kosong.', lines: [] };
   }
   return { heading: 'Checkout tidak berhasil.', lines: ['Coba lagi.'] };
+}
+
+export function PaymentMethodOptions(): Array<{
+  value: PaymentMethod;
+  title: string;
+  description: string;
+}> {
+  // ENABLE_MIDTRANS=false -> hanya "Bayar di Kasir" (Tahap 2).
+  return [
+    ...(isMidtransEnabled
+      ? [
+          {
+            value: 'WEB_MIDTRANS' as PaymentMethod,
+            title: 'Bayar di Web (Midtrans)',
+            description: 'Pembayaran lewat Midtrans Snap.',
+          },
+        ]
+      : []),
+    {
+      value: 'KASIR_CASH' as PaymentMethod,
+      title: 'Bayar di Kasir (Cash)',
+      description: 'Bayar tunai di kasir, diverifikasi oleh kasir.',
+    },
+  ];
 }
 
 export function CartPage() {
@@ -136,14 +168,14 @@ export function CartPage() {
 
       if (result.paymentMethod === 'WEB_MIDTRANS' && result.snapToken) {
         // Status di halaman detail order selalu dibaca dari DB, callback Snap tidak dipakai untuk status.
-        navigate(`/orders/${result.orderId}`);
+        navigate(`/akun/pesanan/${result.orderId}`);
         try {
           await openSnap(result.snapToken);
         } catch {
           toast.error('Pembayaran Midtrans tidak berhasil dibuka. Lanjutkan dari halaman pesanan.');
         }
       } else {
-        navigate(`/orders/${result.orderId}`);
+        navigate(`/akun/pesanan/${result.orderId}`);
       }
     } catch (error) {
       setCheckoutError(mapCheckoutError(error, snapshot));
@@ -196,7 +228,7 @@ export function CartPage() {
               <Card key={item.productId} className="rounded-lg">
                 <CardContent className="flex gap-3 p-3">
                   <Link
-                    to={`/products/${item.slug}`}
+                    to={`/katalog/${item.slug}`}
                     className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted"
                     aria-label={`Lihat ${item.title}`}
                   >
@@ -215,7 +247,7 @@ export function CartPage() {
 
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <Link
-                      to={`/products/${item.slug}`}
+                      to={`/katalog/${item.slug}`}
                       className="line-clamp-1 font-medium hover:underline"
                     >
                       {item.title}
@@ -289,20 +321,7 @@ export function CartPage() {
               <legend className="mb-1 text-sm font-medium">
                 Cara pembayaran
               </legend>
-              {(
-                [
-                  {
-                    value: 'WEB_MIDTRANS' as PaymentMethod,
-                    title: 'Bayar di Web (Midtrans)',
-                    description: 'Pembayaran lewat Midtrans Snap.',
-                  },
-                  {
-                    value: 'KASIR_CASH' as PaymentMethod,
-                    title: 'Bayar di Kasir (Cash)',
-                    description: 'Bayar tunai di kasir, diverifikasi oleh kasir.',
-                  },
-                ]
-              ).map((option) => (
+              {PaymentMethodOptions().map((option) => (
                 <label
                   key={option.value}
                   className={cn(

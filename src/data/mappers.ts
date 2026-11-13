@@ -58,6 +58,7 @@ export function toProfile(row: ProfileRow): {
   id: string;
   fullName: string | null;
   role: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 } {
@@ -65,6 +66,7 @@ export function toProfile(row: ProfileRow): {
     id: row.id,
     fullName: row.full_name,
     role: row.role,
+    isActive: row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

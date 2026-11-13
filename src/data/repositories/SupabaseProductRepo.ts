@@ -8,7 +8,7 @@ import type {
   ProductUpdateInput,
   ProductListResult,
 } from '../../domain/models/Product';
-import type { IProductRepository } from '../../domain/repositories/IProductRepository';
+import type { AdminProductFilter, IProductRepository } from '../../domain/repositories/IProductRepository';
 
 type ProductRow = Database['public']['Tables']['products']['Row'];
 type ProductInsert = Database['public']['Tables']['products']['Insert'];
@@ -51,15 +51,31 @@ export class SupabaseProductRepo implements IProductRepository {
     return toProduct(data as ProductRow);
   }
 
-  async listAdmin(page: number, pageSize: number): Promise<ProductListResult> {
+  async listAdmin(
+    page: number,
+    pageSize: number,
+    filter?: AdminProductFilter
+  ): Promise<ProductListResult> {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    const { data, error, count } = await supabase
+    let query = supabase
       .from('products')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
+
+    if (filter?.isActive !== undefined) {
+      query = query.eq('is_active', filter.isActive);
+    }
+    if (filter?.search) {
+      const q = filter.search.replace(/[%\\]/g, '');
+      if (q) {
+        query = query.or(`title.ilike.%${q}%,slug.ilike.%${q}%`);
+      }
+    }
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
 

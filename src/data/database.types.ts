@@ -1,4 +1,4 @@
-
+﻿
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -40,7 +40,7 @@ isOneToOne: false
                     "created_at"?: string,"expires_at": string,"id"?: string,"idempotency_key": string,"midtrans_transaction_id"?: string | null,"paid_at"?: string | null,"payment_method": string,"payment_type"?: string | null,"snap_redirect_url"?: string | null,"snap_token"?: string | null,"status"?: string,"subtotal": number,"total_amount": number,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"expires_at"?: string,"id"?: string,"idempotency_key"?: string,"midtrans_transaction_id"?: string | null,"paid_at"?: string | null,"payment_method"?: string,"payment_type"?: string | null,"snap_redirect_url"?: string | null,"snap_token"?: string | null,"status"?: string,"subtotal"?: number,"total_amount"?: number,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"expires_at": string,"id"?: string,"idempotency_key": string,"midtrans_transaction_id"?: string | null,"paid_at"?: string | null,"payment_method": string,"payment_type"?: string | null,"snap_redirect_url"?: string | null,"snap_token"?: string | null,"status"?: string,"subtotal"?: number,"total_amount"?: number,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -48,6 +48,26 @@ isOneToOne: false
       columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"audit_log": {
+                  Row: {
+                    "actor_id": string | null,"action": string,"created_at": string,"details": Json | null,"entity": string,"entity_id": string | null,"id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id"?: string | null,"action": string,"created_at"?: string,"details"?: Json | null,"entity": string,"entity_id"?: string | null,"id"?: never
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"action"?: string,"created_at"?: string,"details"?: Json | null,"entity"?: string,"entity_id"?: string | null,"id"?: never
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "audit_log_actor_id_fkey"
+      columns: ["actor_id"]
+isOneToOne: false
+      referencedRelation: "users"
       referencedColumns: ["id"]
     }
                   ]
@@ -60,7 +80,7 @@ isOneToOne: false
                     "id"?: never,"order_id": string,"payload"?: NonNullable<Json>,"received_at"?: string,"source": string,"transaction_status"?: string | null
                   }
                   Update: {
-                    "id"?: never,"order_id"?: string,"payload"?: NonNullable<Json>,"received_at"?: string,"source"?: string,"transaction_status"?: string | null
+                    "id"?: never,"order_id": string,"payload"?: NonNullable<Json>,"received_at"?: string,"source"?: string,"transaction_status"?: string | null
                   }
                   Relationships: [
                     {
@@ -87,14 +107,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"full_name": string | null,"id": string,"role": string,"updated_at": string
+                    "created_at": string,"full_name": string | null,"id": string,"is_active": boolean,"role": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"full_name"?: string | null,"id": string,"role"?: string,"updated_at"?: string
+                    "created_at"?: string,"full_name"?: string | null,"id": string,"is_active"?: boolean,"role"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"full_name"?: string | null,"id"?: string,"role"?: string,"updated_at"?: string
+                    "created_at"?: string,"full_name"?: string | null,"id": string,"is_active"?: boolean,"role"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -215,9 +235,17 @@ export type Enums<
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never
 > = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName] extends {
+      Enums: infer E
+    }
+    ? E
+    : never
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions] extends {
+      Enums: infer E
+    }
+    ? E
+    : never
   : never
 
 export type CompositeTypes<
@@ -230,9 +258,17 @@ export type CompositeTypes<
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName] extends {
+      CompositeTypes: infer C
+    }
+    ? C
+    : never
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions] extends {
+      CompositeTypes: infer C
+    }
+    ? C
+    : never
   : never
 
 export const Constants = {

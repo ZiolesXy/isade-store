@@ -1,79 +1,71 @@
-// Alur rute dan guard sesuai PRD bagian 7.1.
-import { Navigate, Outlet, useLocation } from 'react-router';
+// Guard route PLAN-UPDATE-v3 Tahap 1.
+// Dua lapis: guard UI di sini untuk UX (redirect/403), keamanan asli ada di
+// RLS Supabase dan cek role di Edge Functions (lihat supabase/migrations dan
+// supabase/functions). Guard UI saja tidak cukup.
+import { Navigate, Outlet } from 'react-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { FullPageLoading } from '../components/states';
+import { ForbiddenPage } from '../pages/ForbiddenPage';
+import { hasRole, type Role } from '@/lib/roles';
 
 function SessionLoading() {
   return <FullPageLoading />;
 }
 
-/** Menunggu sesi selesai dicek sebelum memutuskan redirect, supaya tidak terlalu cepat pindah halaman. */
+function currentTarget(): string {
+  return window.location.pathname + window.location.search;
+}
+
+/** Menunggu sesi selesai dicek sebelum memutuskan redirect. */
 export function RequireSessionReady() {
   const sessionReady = useAuthStore((s) => s.sessionReady);
   if (!sessionReady) return <SessionLoading />;
   return <Outlet />;
 }
 
-/** Rute yang butuh login: /orders, /orders/:id. */
+/** Rute yang butuh login. Belum login -> /login lalu kembali ke tujuan semula. */
 export function RequireAuth() {
   const sessionReady = useAuthStore((s) => s.sessionReady);
   const userId = useAuthStore((s) => s.userId);
-  const location = useLocation();
 
   if (!sessionReady) return <SessionLoading />;
   if (!userId) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return (
+      <Navigate to="/login" state={{ from: currentTarget() }} replace />
+    );
   }
   return <Outlet />;
 }
 
-/** Rute admin: /admin/*. */
-export function RequireAdmin() {
+/**
+ * Guard role generik: hasRole() menerapkan aturan admin ⊃ cashier.
+ * Role tidak cukup -> halaman 403 (bukan redirect yang membingungkan).
+ */
+export function RequireRole({ roles }: { roles: Role[] }) {
   const sessionReady = useAuthStore((s) => s.sessionReady);
   const userId = useAuthStore((s) => s.userId);
   const role = useAuthStore((s) => s.role);
-  const location = useLocation();
 
   if (!sessionReady) return <SessionLoading />;
   if (!userId) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return (
+      <Navigate to="/login" state={{ from: currentTarget() }} replace />
+    );
   }
-  if (role !== 'admin') {
-    return <Navigate to="/" replace />;
+  if (!hasRole(role, ...roles)) {
+    return <ForbiddenPage />;
   }
   return <Outlet />;
 }
 
-/** Rute pelanggan: /orders, /orders/:id. Admin dan kasir dialihkan ke halaman admin. */
-export function RequireCustomer() {
-  const sessionReady = useAuthStore((s) => s.sessionReady);
-  const userId = useAuthStore((s) => s.userId);
-  const role = useAuthStore((s) => s.role);
-  const location = useLocation();
-
-  if (!sessionReady) return <SessionLoading />;
-  if (!userId) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
-  if (role !== 'customer') {
-    return <Navigate to="/admin/orders" replace />;
-  }
-  return <Outlet />;
+export function RequireCashierRole() {
+  return <RequireRole roles={['cashier']} />;
 }
 
-/** Rute kasir: /kasir, untuk cashier dan admin. */
-export function RequireCashier() {
-  const sessionReady = useAuthStore((s) => s.sessionReady);
-  const userId = useAuthStore((s) => s.userId);
-  const role = useAuthStore((s) => s.role);
-  const location = useLocation();
+export function RequireAdminRole() {
+  return <RequireRole roles={['admin']} />;
+}
 
-  if (!sessionReady) return <SessionLoading />;
-  if (!userId) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
-  if (role !== 'cashier' && role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
-  return <Outlet />;
+export function RequireUserRole() {
+  return <RequireRole roles={['user']} />;
 }

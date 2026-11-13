@@ -24,7 +24,8 @@ export function LoginPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? '/';
+  // Tanpa tujuan asal: default ke /dashboard sesuai peta route PLAN-UPDATE-v3.
+  const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
 
   function validate(): boolean {
     const errors: Record<string, string> = {};

@@ -18,7 +18,7 @@ export async function authenticateJWT(req: Request): Promise<{ user: AuthUser; e
   const authHeader = req.headers.get("Authorization") || "";
 
   if (!authHeader.startsWith("Bearer ")) {
-    return { user: { id: "", email: null, role: "customer" }, error: unauthorized("Token Bearer tidak ditemukan") };
+    return { user: { id: "", email: null, role: "user" }, error: unauthorized("Token Bearer tidak ditemukan") };
   }
 
   const token = authHeader.substring(7);
@@ -28,7 +28,7 @@ export async function authenticateJWT(req: Request): Promise<{ user: AuthUser; e
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return { user: { id: "", email: null, role: "customer" }, error: unauthorized("Token tidak valid") };
+      return { user: { id: "", email: null, role: "user" }, error: unauthorized("Token tidak valid") };
     }
 
     // Ambil role dari profiles table
@@ -39,7 +39,7 @@ export async function authenticateJWT(req: Request): Promise<{ user: AuthUser; e
       .single();
 
     if (profileError || !profile) {
-      return { user: { id: "", email: null, role: "customer" }, error: unauthorized("Profil tidak ditemukan") };
+      return { user: { id: "", email: null, role: "user" }, error: unauthorized("Profil tidak ditemukan") };
     }
 
     return {
@@ -51,6 +51,6 @@ export async function authenticateJWT(req: Request): Promise<{ user: AuthUser; e
       error: null,
     };
   } catch (err) {
-    return { user: { id: "", email: null, role: "customer" }, error: unauthorized("Internal auth error") };
+    return { user: { id: "", email: null, role: "user" }, error: unauthorized("Internal auth error") };
   }
 }

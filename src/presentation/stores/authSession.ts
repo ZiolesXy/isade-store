@@ -35,7 +35,14 @@ export function initAuthSession(): Unsubscribe {
         .then(({ data: profile }) => {
           // Profil bisa saja belum ada (misal DB di-reset saat sesi masih tersimpan);
           // jangan blok aplikasi, cukup lanjut tanpa role.
-          if (profile) store.setProfile(profile);
+          if (profile) {
+            if (profile.is_active === false) {
+              // Akun dinonaktifkan admin: paksa keluar.
+              void supabase.auth.signOut();
+              return;
+            }
+            store.setProfile(profile);
+          }
         });
     })
     .catch(() => {
@@ -53,7 +60,15 @@ export function initAuthSession(): Unsubscribe {
         .select('*')
         .eq('id', session.user.id)
         .maybeSingle();
-      if (profile) store.setProfile(profile);
+      if (profile) {
+        if (profile.is_active === false) {
+          await supabase.auth.signOut();
+          store.logout();
+          useAuthStore.getState().setSessionReady(true);
+          return;
+        }
+        store.setProfile(profile);
+      }
       useAuthStore.getState().setSessionReady(true);
     }
     if (event === 'SIGNED_OUT') {

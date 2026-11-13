@@ -29,6 +29,14 @@ export class PaymentGatewayError extends Error {
   }
 }
 
+/** Server menolak metode Midtrans karena flag ENABLE_MIDTRANS=false (Tahap 2). */
+export class MidtransDisabledError extends Error {
+  constructor() {
+    super('Pembayaran Midtrans sedang dinonaktifkan. Gunakan bayar di kasir.');
+    this.name = 'MidtransDisabledError';
+  }
+}
+
 export class ValidationError extends Error {
   constructor(message: string, field?: string) {
     super(message);

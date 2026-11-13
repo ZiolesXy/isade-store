@@ -76,7 +76,7 @@ export function ProductDetailPage() {
             Produk tidak ditemukan atau sudah tidak dijual.
           </p>
           <Button asChild variant="outline">
-            <Link to="/">Kembali ke katalog</Link>
+            <Link to="/katalog">Kembali ke katalog</Link>
           </Button>
         </div>
       </section>
