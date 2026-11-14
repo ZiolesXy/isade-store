@@ -41,7 +41,14 @@ export async function verifyPaymentCashierUseCase(
   //    is_cashier() di dalam RPC membaca auth.uid() dari caller JWT.
   const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   const url = Deno.env.get("SUPABASE_URL") || "";
-  const supabaseSecretKey = Deno.env.get("SUPABASE_SECRET_KEY") || "";
+  // Nama env var yang benar-benar disuntikkan ke edge function (lihat
+  // catatan di _shared/supabaseAdmin.ts): SUPABASE_SECRET_KEY tidak pernah
+  // tersedia; nama legacy tetap dipakai walau isinya bisa secret key baru.
+  const supabaseSecretKey =
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    Deno.env.get("SUPABASE_SECRET_KEY") ||
+    Deno.env.get("SUPABASE_INTERNAL_SECRET_KEY") ||
+    "";
   if (!url || !supabaseSecretKey) {
     throw new Error("INTERNAL_SUPABASE_CONFIG: SUPABASE_URL / SUPABASE_SECRET_KEY tidak tersedia");
   }
