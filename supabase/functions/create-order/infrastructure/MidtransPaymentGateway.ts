@@ -45,7 +45,7 @@ export class MidtransPaymentGateway implements PaymentGateway {
         duration: 30,
       },
       callbacks: {
-        finish: `https://isade-store.local/orders/${orderId}`,
+        finish: `${Deno.env.get("APP_URL")}/orders/${orderId}`,
       },
     };
 
