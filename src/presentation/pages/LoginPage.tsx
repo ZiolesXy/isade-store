@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { supabase } from '@/data/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,7 +13,6 @@ type Mode = 'login' | 'register';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginPage() {
-  const [mode, setMode] = useState<Mode>('login');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,6 +25,16 @@ export function LoginPage() {
   const location = useLocation();
   // Tanpa tujuan asal: default ke /dashboard sesuai peta route PLAN-UPDATE-v3.
   const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
+
+  const [searchParams] = useSearchParams();
+  const paramMode: Mode | null =
+    searchParams.get('mode') === 'register' ? 'register' : null;
+  const [mode, setMode] = useState<Mode>(paramMode ?? 'login');
+  // Sinkron mode dengan URL: navbar Daftar/Masuk mengubah param ?mode
+  // tanpa remount (navbar juga tampil di atas /login), jadi ikuti selalu.
+  useEffect(() => {
+    setMode(paramMode ?? 'login');
+  }, [paramMode]);
 
   function validate(): boolean {
     const errors: Record<string, string> = {};

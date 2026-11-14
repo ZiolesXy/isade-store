@@ -18,7 +18,7 @@ Sumber kebenaran role: kolom `profiles.role` (`user | cashier | admin`). Helper 
 |---|---|
 | `/`, `/katalog`, `/katalog/:slug`, `/cart`, `/login` | publik / user |
 | `/dashboard` | user, cashier, admin (satu route, tampilan dipilih dari role) |
-| `/akun`, `/akun/pesanan/:id` | user |
+| `/akun`, `/akun/pesanan/:id` | semua role yang login |
 | `/cashier` | cashier, admin |
 | `/produk`, `/tinjau-pembayaran`, `/users`, `/setting` | admin |
 

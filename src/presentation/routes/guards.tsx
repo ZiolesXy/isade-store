@@ -65,7 +65,3 @@ export function RequireCashierRole() {
 export function RequireAdminRole() {
   return <RequireRole roles={['admin']} />;
 }
-
-export function RequireUserRole() {
-  return <RequireRole roles={['user']} />;
-}

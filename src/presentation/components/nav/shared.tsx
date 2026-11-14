@@ -73,12 +73,11 @@ export function DesktopNav({ items }: { items: NavItem[] }) {
 }
 
 export function useLogout(): () => Promise<void> {
-  const navigate = useNavigate();
-  const logout = useAuthStore((s) => s.logout);
   return async () => {
     await supabase.auth.signOut();
     logout();
-    navigate('/katalog');
+    // Full reload, bukan SPA navigate: semua store (keranjang, dsb.) ikut reset.
+    window.location.assign('/katalog');
   };
 }
 

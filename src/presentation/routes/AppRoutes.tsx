@@ -5,7 +5,6 @@ import {
   RequireCashierRole,
   RequireAdminRole,
   RequireSessionReady,
-  RequireUserRole,
 } from './guards';
 import {
   AccountLayout,
@@ -44,8 +43,8 @@ function OrderIdRedirect() {
  * Peta route PLAN-UPDATE-v3 Tahap 1:
  * - publik/user: /, /katalog, /cart, /login
  * - dashboard satu route untuk user, cashier, admin (dipilih dari role)
- * - /akun user-only; /cashier cashier+admin; /produk, /tinjau-pembayaran,
- *   /users, /setting admin-only
+ * - /akun semua role yang login (navbar menyesuaikan role); /cashier cashier+admin;
+ *   /produk, /tinjau-pembayaran, /users, /setting admin-only
  */
 export function AppRoutes() {
   useAuthSession();
@@ -67,7 +66,7 @@ export function AppRoutes() {
           </Route>
         </Route>
 
-        <Route element={<RequireUserRole />}>
+        <Route element={<RequireAuth />}>
           <Route path="/akun" element={<AccountLayout />}>
             <Route index element={<AccountPage />} />
             <Route path="pesanan/:id" element={<OrderDetailPage />} />

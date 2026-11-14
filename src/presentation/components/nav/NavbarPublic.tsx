@@ -24,7 +24,7 @@ export function NavbarPublic() {
             size="sm"
             className="hidden bg-white/10 text-white hover:bg-white/20 md:inline-flex"
           >
-            <Link to="/login">Daftar</Link>
+            <Link to="/login?mode=register">Daftar</Link>
           </Button>
           <MobileMenuSheet items={NAV_PUBLIC}>
             <Button asChild className="w-full">

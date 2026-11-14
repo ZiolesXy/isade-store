@@ -36,11 +36,18 @@ export function DashboardLayout() {
   );
 }
 
-/** /akun hanya untuk role user (di-guard RequireUserRole). */
+/** /akun bisa diakses semua role yang login; navbar menyesuaikan role. */
 export function AccountLayout() {
+  const role = useAuthStore((s) => s.role);
   return (
     <>
-      <NavbarUser />
+      {role === 'admin' ? (
+        <NavbarAdmin />
+      ) : role === 'cashier' ? (
+        <NavbarCashier />
+      ) : (
+        <NavbarUser />
+      )}
       <Outlet />
     </>
   );

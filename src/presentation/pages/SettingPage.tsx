@@ -27,11 +27,7 @@ export function SettingPage() {
             </div>
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Jenis produk</dt>
-              <dd>Produk digital (gantungan kunci)</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Pengiriman</dt>
-              <dd>Tanpa pengiriman / ongkir</dd>
+              <dd>Gantungan kunci</dd>
             </div>
           </dl>
         </CardContent>
@@ -78,21 +74,6 @@ export function SettingPage() {
           </p>
         </CardContent>
       </Card>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button asChild variant="outline" size="sm">
-          <Link to="/produk">
-            Kelola Produk
-            <CaretRight className="size-4" weight="duotone" />
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/users">
-            Kelola User
-            <CaretRight className="size-4" weight="duotone" />
-          </Link>
-        </Button>
-      </div>
     </section>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { SignOut } from '@phosphor-icons/react';
 import { supabase } from '@/data/supabaseClient';
@@ -17,6 +17,12 @@ export function AccountPage() {
   const fullName = useAuthStore((s) => s.fullName);
   const role = useAuthStore((s) => s.role);
   const [name, setName] = useState(fullName ?? '');
+
+  // Setelah refresh, profil datang belakangan (authSession fetch async);
+  // sinkronkan input saat fullName di store terisi berubah.
+  useEffect(() => {
+    setName(fullName ?? '');
+  }, [fullName]);
   const [saving, setSaving] = useState(false);
 
   async function handleSave(event: FormEvent) {
@@ -31,7 +37,9 @@ export function AccountPage() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .update({ id: userId, full_name: trimmed || null })
+        // id tidak ikut di-set: grant update hanya full_name (RLS + grant),
+        // menyertakan id memicu permission denied yang PostgREST laporkan 401.
+        .update({ full_name: trimmed || null })
         .eq('id', userId)
         .select()
         .single();

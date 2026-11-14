@@ -1,7 +1,8 @@
 import { Link } from 'react-router';
-import { ArrowLeft, SignOut } from '@phosphor-icons/react';
+import { ArrowLeft, SignOut, UserCircle } from '@phosphor-icons/react';
 import { useAuthStore } from '@/presentation/stores/useAuthStore';
 import { Button } from '@/components/ui/button';
+import { SheetClose } from '@/components/ui/sheet';
 import { NAV_CASHIER } from './navConfig';
 import {
   MobileMenuSheet,
@@ -50,22 +51,40 @@ export function NavbarCashier() {
               </Link>
             </Button>
           ) : null}
-          <span className="hidden max-w-40 truncate text-sm text-white/70 md:inline">
-            {fullName ?? email}
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-white hover:bg-white/10 hover:text-white"
-            onClick={() => void logout()}
-          >
-            <SignOut className="size-4" weight="duotone" />
-            Keluar
-          </Button>
+          <div className="hidden items-center gap-1 md:flex">
+            <Button
+              asChild
+              size="sm"
+              variant="ghost"
+              className="text-white hover:bg-white/10 hover:text-white"
+            >
+              <Link to="/akun">
+                <UserCircle className="size-4" weight="duotone" />
+                Akun
+              </Link>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-white hover:bg-white/10 hover:text-white"
+              onClick={() => void logout()}
+            >
+              <SignOut className="size-4" weight="duotone" />
+              Keluar
+            </Button>
+          </div>
           <MobileMenuSheet items={NAV_CASHIER}>
             <p className="truncate px-3 text-sm text-muted-foreground">
               {fullName ?? email}
             </p>
+            <SheetClose asChild>
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link to="/akun">
+                  <UserCircle className="size-4" weight="duotone" />
+                  Profil saya
+                </Link>
+              </Button>
+            </SheetClose>
             <Button variant="outline" onClick={() => void logout()}>
               <SignOut className="size-4" weight="duotone" />
               Keluar

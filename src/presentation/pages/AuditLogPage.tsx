@@ -173,7 +173,7 @@ export function AuditLogPage() {
                       <TableCell className="text-sm">
                         {row.actor_id
                           ? (actorNames[row.actor_id] ?? row.actor_id.slice(0, 8))
-                          : <span className="text-muted-foreground">sistem</span>}
+                          : <span className="text-muted-foreground">database</span>}
                       </TableCell>
                       <TableCell>
                         <Badge

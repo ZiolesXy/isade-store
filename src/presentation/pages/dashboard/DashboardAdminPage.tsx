@@ -211,8 +211,7 @@ export default function DashboardAdminPage() {
                       {formatRupiah(s.total)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {s.count} transaksi &middot; sumber: orders status=paid,
-                      paid_at periode ini
+                      {s.count} transaksi &middot;
                     </p>
                   </CardContent>
                 </Card>
