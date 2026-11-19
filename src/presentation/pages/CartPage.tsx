@@ -83,7 +83,7 @@ export function PaymentMethodOptions(): Array<{
       : []),
     {
       value: 'KASIR_CASH' as PaymentMethod,
-      title: 'Bayar di Kasir (Cash)',
+      title: 'Bayar di Kasir',
       description: 'Bayar tunai di kasir, diverifikasi oleh kasir.',
     },
   ];

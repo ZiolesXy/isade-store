@@ -330,7 +330,7 @@ export function OrderDetailPage() {
               ? 'Bayar di Web (Midtrans)'
               : order.paymentType
                 ? `Bayar di Web (Midtrans, ${order.paymentType})`
-                : 'Bayar di Kasir (Cash)'}
+                : 'Bayar di Kasir'}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             Pesanan dibuat {formatDateTime(order.createdAt)}
