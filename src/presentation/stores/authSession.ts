@@ -55,21 +55,26 @@ export function initAuthSession(): Unsubscribe {
   const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
       store.setSession(session.user.id, session.user.email ?? null, null);
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-      if (profile) {
-        if (profile.is_active === false) {
-          await supabase.auth.signOut();
-          store.logout();
-          useAuthStore.getState().setSessionReady(true);
-          return;
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        if (profile) {
+          if (profile.is_active === false) {
+            await supabase.auth.signOut();
+            store.logout();
+            return;
+          }
+          store.setProfile(profile);
         }
-        store.setProfile(profile);
+      } finally {
+        // Tetap tandai siap walau profil gagal dimuat supaya aplikasi tidak
+        // berhenti di layar loading; guard akan memperlakukan role null
+        // sebagai tidak berhak (403), bukan menggantung.
+        useAuthStore.getState().setSessionReady(true);
       }
-      useAuthStore.getState().setSessionReady(true);
     }
     if (event === 'SIGNED_OUT') {
       store.logout();

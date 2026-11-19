@@ -417,3 +417,23 @@ Status: selesai
 - `npm run build` lulus; `npm test` 53/53 lulus (7 file).
 - `supabase migration up --local` menerapkan migrasi.
 - Uji transaksi lokal: insert produk diskon persentase dan nominal berhasil; insert dengan `discount_type = 'percent'` dan `discount_value = 0` ditolak `check_violation`; semua di-`ROLLBACK`.
+
+---
+
+## 2026-11-19 - Perbaikan refresh/deep link di Vercel dan race guard role
+
+Status: selesai
+
+### Dikerjakan
+- `vercel.json` ditambahkan dengan rewrite `/(.*)` -> `/index.html` agar deep link dan refresh di route SPA (mis. `/katalog/...`, `/produk`, `/akun/pesanan/:id`) tidak lagi menghasilkan 404 `NOT_FOUND` dari Vercel.
+- `setSession()` tidak lagi langsung menandai `sessionReady = true`. Sesi baru dianggap siap setelah profil dan role selesai dimuat, sehingga guard role tidak sempat menampilkan halaman Forbidden sesaat setelah refresh.
+- Handler `SIGNED_IN` memakai `try/finally` agar `sessionReady` tetap diset walau query profil gagal, sehingga aplikasi tidak berhenti di layar loading.
+
+### File utama yang berubah
+- `vercel.json`
+- `src/presentation/stores/useAuthStore.ts`
+- `src/presentation/stores/authSession.ts`
+
+### Bukti verifikasi
+- `npm run build` lulus; `npm test` 53/53 lulus.
+- Rewrite mengikuti rekomendasi resmi Vercel untuk Vite SPA.

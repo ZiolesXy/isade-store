@@ -31,8 +31,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   role: null,
   sessionReady: false,
 
-  setSession: (userId, email, role) =>
-    set({ userId, email, role, sessionReady: true }),
+  // sessionReady sengaja tidak diubah di sini: role masih null sampai profil
+  // selesai dimuat. Kalau langsung dianggap siap, guard role bisa sempat
+  // menampilkan 403/Forbidden sesaat setelah refresh.
+  setSession: (userId, email, role) => set({ userId, email, role }),
 
   setProfile: (row) => {
     if (!row) return;
