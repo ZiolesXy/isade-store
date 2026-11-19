@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { Minus, Plus } from '@phosphor-icons/react';
+import { Plus } from '@phosphor-icons/react';
 import type { Product } from '@/domain/models/Product';
 import { di } from '@/di';
 import { useCartStore } from '@/presentation/stores/useCartStore';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LOW_STOCK_THRESHOLD } from '@/presentation/components/ProductCard';
+import { QuantityInput } from '@/presentation/components/QuantityInput';
 import { toast } from 'sonner';
 
 export function ProductDetailPage() {
@@ -169,31 +170,12 @@ export function ProductDetailPage() {
 
         <div className="mt-auto flex flex-wrap items-center gap-3">
           {!outOfStock ? (
-            <div className="flex items-center rounded-md border" aria-label="Jumlah">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={quantity <= 1}
-                aria-label="Kurangi jumlah"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              >
-                <Minus className="size-4" weight="bold" />
-              </Button>
-              <span className="w-10 text-center text-sm" aria-live="polite">
-                {quantity}
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={quantity >= maxQuantity}
-                aria-label="Tambah jumlah"
-                onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-              >
-                <Plus className="size-4" weight="bold" />
-              </Button>
-            </div>
+            <QuantityInput
+              value={quantity}
+              onChange={setQuantity}
+              max={maxQuantity}
+              itemLabel={product.title}
+            />
           ) : null}
 
           <Button

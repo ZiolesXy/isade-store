@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Minus, Plus, TrashSimple } from '@phosphor-icons/react';
+import { TrashSimple } from '@phosphor-icons/react';
 import type { CartItem } from '@/domain/models/CartItem';
 import type { CartChange } from '@/application/cart';
 import type { PaymentMethod } from '@/domain/models/Order';
@@ -21,6 +21,7 @@ import { getProductImageUrl } from '@/lib/productImage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/presentation/components/states';
+import { QuantityInput } from '@/presentation/components/QuantityInput';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -263,31 +264,13 @@ export function CartPage() {
                     ) : null}
 
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <div className="flex items-center rounded-md border">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Kurangi jumlah ${item.title}`}
-                          disabled={item.quantity <= 1}
-                          onClick={() => setQty(item.productId, item.quantity - 1)}
-                        >
-                          <Minus className="size-3.5" weight="bold" />
-                        </Button>
-                        <span className="w-8 text-center text-sm" aria-live="polite">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Tambah jumlah ${item.title}`}
-                          disabled={item.quantity >= maxQty}
-                          onClick={() => setQty(item.productId, item.quantity + 1, maxQty)}
-                        >
-                          <Plus className="size-3.5" weight="bold" />
-                        </Button>
-                      </div>
+                      <QuantityInput
+                        compact
+                        value={item.quantity}
+                        onChange={(quantity) => setQty(item.productId, quantity, maxQty)}
+                        max={maxQty}
+                        itemLabel={item.title}
+                      />
                       <p className="ml-auto whitespace-nowrap text-sm font-semibold">
                         {formatRupiah(item.unitPrice * item.quantity)}
                       </p>
