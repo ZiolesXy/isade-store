@@ -372,3 +372,21 @@ Status: selesai
 
 ### Bukti verifikasi
 - `npm run build` lulus; `npm test` 46/46 lulus.
+
+---
+
+## 2026-11-19 - Audit log tidak mencatat perubahan stok sistem
+
+Status: selesai
+
+### Dikerjakan
+- `audit_log` tidak lagi bertambah saat checkout, pembayaran (webhook), atau verifikasi kasir mengubah `products.stock` / `locked_stock`.
+- `write_audit_log()` melewati baris `products` selama flag transaksi-lokal `app.skip_product_audit = 'on'`.
+- `create_order_atomic`, `apply_payment_result`, dan `verify_payment_cashier` menyalakan flag sebelum mengubah stok, lalu mengembalikannya ke nilai sebelumnya sebelum `return` (termasuk pada jalur error), sehingga edit produk oleh admin pada transaksi yang sama tetap tercatat.
+- Audit edit produk oleh admin (tambah/ubah/nonaktif, termasuk ubah stok manual) tetap berjalan seperti biasa.
+
+### File utama yang berubah
+- `supabase/migrations/20261119100000_skip_system_product_audit.sql`
+
+### Bukti verifikasi
+- Uji transaksi lokal: `audit_log` tetap 10 baris setelah `create_order_atomic` dan `apply_payment_result('paid')` (stok berubah 49 → 47, locked 6 → 8 → 6), lalu menjadi 11 baris setelah satu `UPDATE products` manual. Diulang dengan `ROLLBACK`.

@@ -247,7 +247,7 @@ export default function DashboardAdminPage() {
             {isMidtransEnabled ? (
               <Card className="rounded-lg">
                 <CardContent className="p-4">
-                  <p className="font-semibold">Midtrans vs Kasir (lunas, bulan ini)</p>
+                  <p className="font-semibold">Midtrans atau Kasir (lunas, bulan ini)</p>
                   <ul className="mt-2 flex flex-col gap-1 text-sm">
                     <li>Midtrans: {methodSplit().midtrans} transaksi</li>
                     <li>Kasir (tunai): {methodSplit().cash} transaksi</li>
@@ -262,8 +262,7 @@ export default function DashboardAdminPage() {
                 <CardContent className="p-4">
                   <p className="font-semibold">Midtrans nonaktif</p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Semua pembayaran berjalan lewat kasir. Status diatur lewat env
-                    ENABLE_MIDTRANS.
+                    Semua pembayaran berjalan lewat kasir.
                   </p>
                 </CardContent>
               </Card>
