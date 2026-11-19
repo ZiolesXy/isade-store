@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router';
+import { Link, NavLink } from 'react-router';
 import { List } from '@phosphor-icons/react';
 import { supabase } from '@/data/supabaseClient';
 import { useAuthStore } from '@/presentation/stores/useAuthStore';
@@ -73,6 +73,7 @@ export function DesktopNav({ items }: { items: NavItem[] }) {
 }
 
 export function useLogout(): () => Promise<void> {
+  const logout = useAuthStore((s) => s.logout);
   return async () => {
     await supabase.auth.signOut();
     logout();

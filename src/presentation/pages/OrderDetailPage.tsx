@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Order } from '@/domain/models/Order';
 import { di } from '@/di';
+import { supabase } from '@/data/supabaseClient';
 import { useCheckout } from '@/presentation/hooks/useCheckout';
 import { OrderStatusBadge, STATUS_LABEL } from '@/presentation/components/OrderStatusBadge';
 import { ErrorState } from '@/presentation/components/states';
 import { formatDateTime, formatRupiah } from '@/lib/format';
+import { orderNotes, paymentSourceLabel, type OrderNoteRow } from '@/lib/paymentEvents';
 import { hasRole } from '@/lib/roles';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,6 +71,11 @@ function remainingText(expiresAt: string): string {
   return `Sisa waktu ${minutes}:${String(seconds).padStart(2, '0')}.`;
 }
 
+function noteStatusLabel(status: string | null): string {
+  if (!status) return '-';
+  return (STATUS_LABEL as Record<string, string>)[status] ?? status;
+}
+
 function DetailSkeleton() {
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 py-6" aria-hidden="true">
@@ -86,6 +93,8 @@ export function OrderDetailPage() {
   const { userId, role } = useAuthStore();
 
   const [order, setOrder] = useState<Order | null>(null);
+  const [notes, setNotes] = useState<OrderNoteRow[]>([]);
+  const [ownerName, setOwnerName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pollActive, setPollActive] = useState(false);
@@ -106,7 +115,30 @@ export function OrderDetailPage() {
       const isOwnOnly = !hasRole(role, 'cashier');
       const loaded = await di.orderRepository.getById(id, isOwnOnly ? userId : undefined);
       setOrder(loaded);
-      if (!loaded) setError('Pesanan tidak ditemukan atau bukan milikmu.');
+      if (!loaded) {
+        setNotes([]);
+        setOwnerName(null);
+        setError('Pesanan tidak ditemukan atau bukan milikmu.');
+        return;
+      }
+
+      // Catatan kasir/admin diambil lewat RPC khusus (bukan payload mentah).
+      const { data: noteRows, error: notesError } = await supabase.rpc('list_order_notes', {
+        p_order_id: id,
+      });
+      setNotes(notesError ? [] : orderNotes(noteRows ?? []));
+
+      // Admin/kasir melihat detail pesanan orang lain: tampilkan pemiliknya.
+      if (hasRole(role, 'cashier') && loaded.userId !== userId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', loaded.userId)
+          .maybeSingle();
+        setOwnerName(profile?.full_name ?? null);
+      } else {
+        setOwnerName(null);
+      }
     } catch {
       setError('Pesanan tidak berhasil dimuat.');
     } finally {
@@ -178,6 +210,12 @@ export function OrderDetailPage() {
         <OrderStatusBadge status={order.status} />
       </div>
       <p className="mt-1 font-mono text-xs text-muted-foreground">Kode pesanan: {order.id}</p>
+      {hasRole(role, 'cashier') ? (
+        <p className="mt-1 text-sm text-muted-foreground">
+          Pemilik pesanan: {ownerName?.trim() || '(tanpa nama)'}{' '}
+          <span className="font-mono text-xs">({order.userId.slice(0, 8)})</span>
+        </p>
+      ) : null}
 
       {/* Focal point: status pembayaran. */}
       <div className="mt-4 rounded-lg border bg-card p-4" data-testid="order-status-message">
@@ -230,6 +268,27 @@ export function OrderDetailPage() {
           </Button>
         ) : null}
       </div>
+
+      {notes.length > 0 ? (
+        <div className="mt-4 rounded-lg border bg-card p-4" data-testid="order-notes">
+          <h2 className="font-display text-base font-semibold">Catatan Pembayaran</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Catatan dari kasir/admin saat memverifikasi pesanan ini.
+          </p>
+          <ul className="mt-3 flex flex-col gap-2">
+            {notes.map((note) => (
+              <li key={note.id} className="rounded-md border bg-muted/30 p-3">
+                <p className="whitespace-pre-wrap text-sm">{note.catatan}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {paymentSourceLabel(note.source)} &middot;{' '}
+                  {noteStatusLabel(note.transaction_status)} &middot;{' '}
+                  {formatDateTime(note.received_at)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-4 rounded-lg border bg-card">
         <table className="w-full text-sm">

@@ -328,3 +328,26 @@ Status: selesai (uji otomatis + SQL lokal; uji browser end-to-end menunggu Tahap
 - Halaman admin baru: `/produk` (cari + filter), `/tinjau-pembayaran` (filter status + catatan audit), `/users` (ubah role, nonaktifkan, proteksi admin terakhir), `/setting` (status read-only).
 - `audit_log` otomatis (trigger) untuk kelola produk dan perubahan role/status akun; `payment_events` tetap menjadi jejak pembayaran.
 - Sengaja ditunda: verifikasi browser end-to-end (Tahap 6 PRD), tampilan email user lain di `/users`, ekspor laporan.
+
+---
+
+## 2026-11-19 - Catatan pembayaran untuk user + pemilik order di tinjau pembayaran
+
+Status: selesai
+
+### Dikerjakan
+- User bisa membaca catatan pembayaran (payload `catatan`) pada detail pesanannya tanpa membuka payload mentah `payment_events`. Ditambahkan RPC `list_order_notes(order_id)` yang hanya mengembalikan sumber, status, catatan, dan waktu; akses dibatasi pemilik order atau admin/kasir.
+- Detail pesanan (`/akun/pesanan/:id`) menampilkan daftar "Catatan Pembayaran" (catatan, sumber, status, waktu) dan pemilik order saat dibuka admin/kasir.
+- `/tinjau-pembayaran`: kolom Pemilik menampilkan nama profil (fallback ID singkat), dialog detail menampilkan pemilik pesanan dan kolom Catatan dari `payment_events`.
+- RPC juga membaca fallback `message`, `note`, dan `status_message` selain `catatan`.
+
+### File utama yang berubah
+- `supabase/migrations/20261119090000_order_notes_rpc.sql`, `src/data/database.types.ts`
+- `src/lib/paymentEvents.ts`, `src/presentation/pages/OrderDetailPage.tsx`, `src/presentation/pages/PaymentsReviewPage.tsx`
+
+### Bukti verifikasi
+- `npm run build` lulus; `npm test` 46/46 lulus.
+- Migrasi diterapkan lokal; RPC diuji lewat psql: pemilik order mendapat catatan (`QRIS`), admin mendapat catatan, user lain ditolak `FORBIDDEN`.
+
+### Catatan
+- Payload `payment_events` sengaja tidak dibuka ke user karena payload webhook Midtrans berisi `signature_key`; RPC hanya mengekspos catatan yang diperlukan.

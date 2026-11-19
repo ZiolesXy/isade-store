@@ -137,6 +137,9 @@ isOneToOne: false
 "is_cashier":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"list_order_notes":
+{ Args: { "p_order_id": string }; Returns: Array<{ "catatan": string | null,"id": number,"received_at": string,"source": string,"transaction_status": string | null }>
+                           },
 "verify_payment_cashier":
 { Args: { "p_catatan": string,"p_order_id": string,"p_result": string }; Returns: string
                            }

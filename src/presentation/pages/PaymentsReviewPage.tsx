@@ -5,6 +5,7 @@ import { useCashier } from '@/presentation/hooks/useCashier';
 import { OrderStatusBadge } from '@/presentation/components/OrderStatusBadge';
 import { EmptyState, ErrorState, RowSkeleton } from '@/presentation/components/states';
 import { formatDateTime, formatRupiah } from '@/lib/format';
+import type { OrderNoteRow } from '@/lib/paymentEvents';
 import { hasRole } from '@/lib/roles';
 import { useAuthStore } from '@/presentation/stores/useAuthStore';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,6 @@ import { toast } from 'sonner';
 import type { Order } from '@/domain/models/Order';
 
 type OrderRow = Database['public']['Tables']['orders']['Row'];
-type PaymentEventRow = Database['public']['Tables']['payment_events']['Row'];
 
 type ReviewAction = 'approve' | 'reject';
 
@@ -87,7 +87,12 @@ export function PaymentsReviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<{ order: Order; events: PaymentEventRow[] } | null>(null);
+  const [ownerNames, setOwnerNames] = useState<Record<string, string | null>>({});
+  const [detail, setDetail] = useState<{
+    order: Order;
+    events: OrderNoteRow[];
+    ownerName: string | null;
+  } | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [catatan, setCatatan] = useState('');
 
@@ -110,14 +115,29 @@ export function PaymentsReviewPage() {
         .range(from, to);
       if (queryError) throw queryError;
 
+      const pageRows = (data ?? []).slice(0, PAGE_SIZE) as OrderRow[];
       setHasNext((data ?? []).length > PAGE_SIZE);
       setRows(
-        (data ?? []).slice(0, PAGE_SIZE).map((row) => ({
-          order: orderFromRow(row as OrderRow),
-          userId: (row as OrderRow).user_id,
+        pageRows.map((row) => ({
+          order: orderFromRow(row),
+          userId: row.user_id,
         }))
       );
       setPage(targetPage);
+
+      // Pemilik pesanan: satu query kecil untuk semua user di halaman ini.
+      const ownerIds = [...new Set(pageRows.map((row) => row.user_id))];
+      if (ownerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id,full_name')
+          .in('id', ownerIds);
+        setOwnerNames(
+          Object.fromEntries((profiles ?? []).map((profile) => [profile.id, profile.full_name]))
+        );
+      } else {
+        setOwnerNames({});
+      }
     } catch {
       setError('Daftar pembayaran tidak berhasil dimuat.');
     } finally {
@@ -133,13 +153,21 @@ export function PaymentsReviewPage() {
     setDetailLoading(true);
     setCatatan('');
     try {
-      const { data, error: eventsError } = await supabase
-        .from('payment_events')
-        .select('*')
-        .eq('order_id', order.id)
-        .order('received_at', { ascending: false });
-      if (eventsError) throw eventsError;
-      setDetail({ order, events: data ?? [] });
+      // RPC mengembalikan catatan + status + waktu tanpa membuka payload mentah.
+      const [eventsResult, ownerResult] = await Promise.all([
+        supabase.rpc('list_order_notes', { p_order_id: order.id }),
+        supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', order.userId)
+          .maybeSingle(),
+      ]);
+      if (eventsResult.error) throw eventsResult.error;
+      setDetail({
+        order,
+        events: eventsResult.data ?? [],
+        ownerName: ownerResult.data?.full_name ?? ownerNames[order.userId] ?? null,
+      });
     } catch {
       toast.error('Detail transaksi tidak berhasil dimuat.');
     } finally {
@@ -193,7 +221,7 @@ export function PaymentsReviewPage() {
 
       <p className="mb-4 text-sm text-muted-foreground">
         Daftar pembayaran dengan status {activeTabLabel.toLowerCase()}. Buka detail untuk
-        melihat catatan audit (payment_events: sumber, status, siapa/kapan).
+        melihat pemilik pesanan dan catatan pembayaran (sumber, status, catatan, waktu).
       </p>
 
       {loading ? (
@@ -208,7 +236,7 @@ export function PaymentsReviewPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Kode</TableHead>
-                <TableHead className="text-left">Pelanggan</TableHead>
+                <TableHead className="text-left">Pemilik</TableHead>
                 <TableHead className="text-left">Metode</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Total</TableHead>
@@ -220,7 +248,14 @@ export function PaymentsReviewPage() {
               {rows.map(({ order, userId }) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}</TableCell>
-                  <TableCell className="text-sm">{userId.slice(0, 8)}</TableCell>
+                  <TableCell className="text-sm">
+                    <p className="font-medium">
+                      {ownerNames[userId]?.trim() || '(tanpa nama)'}
+                    </p>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {userId.slice(0, 8)}
+                    </p>
+                  </TableCell>
                   <TableCell className="text-sm">
                     {order.paymentMethod === 'WEB_MIDTRANS' ? 'Midtrans' : 'Tunai (Kasir)'}
                   </TableCell>
@@ -298,6 +333,18 @@ export function PaymentsReviewPage() {
           </DialogHeader>
           {detail ? (
             <div className="flex flex-col gap-4 text-sm">
+              <div className="rounded-md border bg-muted/40 p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Pemilik pesanan
+                </p>
+                <p className="mt-1 font-medium">
+                  {detail.ownerName?.trim() || '(tanpa nama)'}
+                </p>
+                <p className="font-mono text-xs text-muted-foreground">
+                  {detail.order.userId}
+                </p>
+              </div>
+
               <div className="flex flex-wrap items-center gap-2">
                 <OrderStatusBadge status={detail.order.status} />
                 <span className="font-semibold">
@@ -319,6 +366,7 @@ export function PaymentsReviewPage() {
                     <TableRow>
                       <TableHead>Sumber</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Catatan</TableHead>
                       <TableHead>Diterima</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -327,17 +375,27 @@ export function PaymentsReviewPage() {
                       <TableRow key={e.id}>
                         <TableCell>{e.source}</TableCell>
                         <TableCell>{e.transaction_status ?? '-'}</TableCell>
+                        <TableCell className="max-w-56 whitespace-pre-wrap break-words">
+                          {e.catatan?.trim() || '-'}
+                        </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
                           {formatDateTime(e.received_at)}
                         </TableCell>
                       </TableRow>
                     ))}
+                    {detail.events.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                          Belum ada catatan pembayaran.
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
                   </TableBody>
                 </Table>
               </div>
               <p className="text-xs text-muted-foreground">
-                payment_events adalah catatan audit: setiap perubahan tercatat dengan
-                sumber (webhook/cashier/system), status, dan waktu.
+                Catatan pembayaran berasal dari payment_events: sumber
+                (webhook/cashier/system), status, catatan kasir/admin, dan waktu.
               </p>
 
               {tab === 'needs_review' && canReview ? (

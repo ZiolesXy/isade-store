@@ -1,8 +1,6 @@
-import { Link } from 'react-router';
-import { CaretRight, Gear, Storefront } from '@phosphor-icons/react';
+import { Gear, Storefront } from '@phosphor-icons/react';
 import { isMidtransEnabled } from '@/lib/config';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 /**
@@ -50,27 +48,8 @@ export function SettingPage() {
           </div>
           <p className="text-sm text-muted-foreground">
             {isMidtransEnabled
-              ? 'Checkout menawarkan dua pilihan: Bayar di Web (Midtrans) dan Bayar di Kasir.'
-              : 'Hanya pembayaran di kasir yang tersedia di checkout.'}{' '}
-            Status dibaca dari env, bukan dari halaman ini.
-          </p>
-          <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
-            <li>
-              <span className="font-mono">VITE_ENABLE_MIDTRANS</span> &mdash; client
-              (mengontrol pilihan di checkout), diubah lalu build ulang.
-            </li>
-            <li>
-              <span className="font-mono">ENABLE_MIDTRANS</span> &mdash; server (Edge
-              Function create-order menolak metode Midtrans saat false).
-            </li>
-            <li>
-              Webhook Midtrans tetap menerima transaksi lama yang dibuat sebelum flag
-              dimatikan.
-            </li>
-          </ul>
-          <p className="text-xs text-muted-foreground">
-            Untuk mengubah: set env di atas, lalu redeploy (deploy ulang Edge Function
-            untuk env server).
+              ? 'Checkout menawarkan dua pilihan: Bayar di Web dan Bayar di Kasir.'
+              : 'Saat ini hanya pembayaran di kasir yang tersedia di checkout.'}{' '}
           </p>
         </CardContent>
       </Card>
