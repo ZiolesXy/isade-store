@@ -12,6 +12,12 @@ export function toProduct(row: ProductRow): import('../domain/models/Product').P
     title: row.title,
     description: row.description,
     price: row.price,
+    originalPrice: row.original_price,
+    discountType:
+      row.discount_type === 'percent' || row.discount_type === 'fixed'
+        ? row.discount_type
+        : null,
+    discountValue: row.discount_value,
     stock: row.stock,
     lockedStock: row.locked_stock,
     availableStock: row.available_stock ?? 0,

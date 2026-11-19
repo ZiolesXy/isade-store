@@ -93,14 +93,14 @@ isOneToOne: false
                   ]
                 },"products": {
                   Row: {
-                    "available_stock": number | null,"created_at": string,"description": string,"id": string,"image_path": string | null,"is_active": boolean,"locked_stock": number,"price": number,"slug": string,"stock": number,"title": string,"updated_at": string
+                    "available_stock": number | null,"created_at": string,"description": string,"discount_type": string | null,"discount_value": number | null,"id": string,"image_path": string | null,"is_active": boolean,"locked_stock": number,"original_price": number | null,"price": number,"slug": string,"stock": number,"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "available_stock"?: never,"created_at"?: string,"description"?: string,"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"locked_stock"?: number,"price": number,"slug": string,"stock"?: number,"title": string,"updated_at"?: string
+                    "available_stock"?: never,"created_at"?: string,"description"?: string,"discount_type"?: string | null,"discount_value"?: number | null,"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"locked_stock"?: number,"original_price"?: number | null,"price": number,"slug": string,"stock"?: number,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "available_stock"?: never,"created_at"?: string,"description"?: string,"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"locked_stock"?: number,"price"?: number,"slug"?: string,"stock"?: number,"title"?: string,"updated_at"?: string
+                    "available_stock"?: never,"created_at"?: string,"description"?: string,"discount_type"?: string | null,"discount_value"?: number | null,"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"locked_stock"?: number,"original_price"?: number | null,"price"?: number,"slug"?: string,"stock"?: number,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     

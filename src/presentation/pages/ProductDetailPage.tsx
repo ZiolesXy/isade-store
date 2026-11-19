@@ -7,6 +7,7 @@ import { useCartStore } from '@/presentation/stores/useCartStore';
 import { useAuthStore } from '@/presentation/stores/useAuthStore';
 import { formatRupiah } from '@/lib/format';
 import { getProductImageUrl } from '@/lib/productImage';
+import { discountAmount, discountPercent, hasDiscount } from '@/lib/productPricing';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -85,6 +86,7 @@ export function ProductDetailPage() {
 
   const outOfStock = product.availableStock <= 0;
   const maxQuantity = Math.min(99, product.availableStock);
+  const discounted = hasDiscount(product);
   const current = product;
 
   function handleAdd() {
@@ -136,16 +138,28 @@ export function ProductDetailPage() {
       <div className="flex flex-col gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold">{product.title}</h1>
-          <p className="mt-1 text-xl font-semibold text-foreground">
-            {formatRupiah(product.price)}
-          </p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p className="text-xl font-semibold text-primary">{formatRupiah(product.price)}</p>
+            {discounted ? (
+              <p className="text-sm text-muted-foreground line-through">
+                {formatRupiah(product.originalPrice)}
+              </p>
+            ) : null}
+          </div>
         </div>
 
-        {outOfStock ? (
-          <Badge variant="outline">Stok habis</Badge>
-        ) : product.availableStock <= LOW_STOCK_THRESHOLD ? (
-          <Badge variant="secondary">Sisa {product.availableStock}</Badge>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {discounted ? (
+            <Badge variant="secondary">
+              -{discountPercent(product)}% · Hemat {formatRupiah(discountAmount(product))}
+            </Badge>
+          ) : null}
+          {outOfStock ? (
+            <Badge variant="outline">Stok habis</Badge>
+          ) : product.availableStock <= LOW_STOCK_THRESHOLD ? (
+            <Badge variant="secondary">Sisa {product.availableStock}</Badge>
+          ) : null}
+        </div>
 
         {product.description ? (
           <p className="whitespace-pre-line text-sm leading-6 text-muted-foreground">

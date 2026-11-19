@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatRupiah } from '@/lib/format';
 import { getProductImageUrl } from '@/lib/productImage';
+import { discountPercent, hasDiscount } from '@/lib/productPricing';
 
 /** Ambang badge "Sisa N". DESIGN.md belum menentukan angkanya, dipatok 5 dan dicatat di changelog. */
 export const LOW_STOCK_THRESHOLD = 5;
@@ -18,6 +19,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const imageUrl = getProductImageUrl(product.imagePath);
   const outOfStock = product.availableStock <= 0;
   const lowStock = !outOfStock && product.availableStock <= LOW_STOCK_THRESHOLD;
+  const discounted = hasDiscount(product);
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md">
@@ -47,12 +49,24 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         >
           {product.title}
         </Link>
-        <p className="text-sm font-semibold">{formatRupiah(product.price)}</p>
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <p className="text-sm font-semibold text-primary">{formatRupiah(product.price)}</p>
+          {discounted ? (
+            <p className="text-xs text-muted-foreground line-through">
+              {formatRupiah(product.originalPrice)}
+            </p>
+          ) : null}
+        </div>
 
-        {lowStock ? (
-          <Badge variant="secondary">Sisa {product.availableStock}</Badge>
+        {discounted || lowStock || outOfStock ? (
+          <div className="flex flex-wrap items-center gap-1">
+            {discounted ? (
+              <Badge variant="secondary">-{discountPercent(product)}%</Badge>
+            ) : null}
+            {lowStock ? <Badge variant="secondary">Sisa {product.availableStock}</Badge> : null}
+            {outOfStock ? <Badge variant="outline">Stok habis</Badge> : null}
+          </div>
         ) : null}
-        {outOfStock ? <Badge variant="outline">Stok habis</Badge> : null}
 
         <div className="mt-auto pt-2">
           <Button

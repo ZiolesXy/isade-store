@@ -390,3 +390,30 @@ Status: selesai
 
 ### Bukti verifikasi
 - Uji transaksi lokal: `audit_log` tetap 10 baris setelah `create_order_atomic` dan `apply_payment_result('paid')` (stok berubah 49 → 47, locked 6 → 8 → 6), lalu menjadi 11 baris setelah satu `UPDATE products` manual. Diulang dengan `ROLLBACK`.
+
+---
+
+## 2026-11-19 - Harga asli dan potongan produk
+
+Status: selesai
+
+### Dikerjakan
+- Produk kini punya harga asli (`original_price`) dan potongan dengan dua pilihan: persentase (`percent`) atau nominal tetap (`fixed`).
+- `price` tetap menjadi harga jual final, sehingga keranjang, checkout, dan fungsi `create_order_atomic` tidak perlu diubah.
+- Form admin: isi harga asli, pilih jenis potongan, isi nilai potongan, lalu lihat pratinjau harga jual sebelum menyimpan. Tanpa potongan, `original_price`/`discount_type`/`discount_value` disimpan `null`.
+- Katalog dan halaman detail produk menampilkan harga jual final (warna utama) serta harga asli dicoret; badge menampilkan persentase potongan dan nominal hemat.
+- Tabel produk di admin menampilkan harga jual dan harga asli dicoret.
+- Constraint database menjaga konsistensi: potongan wajib punya harga asli, nilai persentase 1-100, nominal tetap > 0, dan harga jual harus lebih murah dari harga asli.
+- Grant kolom baru untuk role `authenticated` agar admin bisa menyimpan potongan.
+
+### File utama yang berubah
+- `supabase/migrations/20261119110000_product_discounts.sql`
+- `src/domain/models/Product.ts`, `src/lib/productPricing.ts` (+ tes)
+- `src/data/database.types.ts`, `src/data/mappers.ts`, `src/data/repositories/SupabaseProductRepo.ts`
+- `src/presentation/components/ProductCard.tsx`
+- `src/presentation/pages/{ProdukAdminPage,ProductDetailPage}.tsx`
+
+### Bukti verifikasi
+- `npm run build` lulus; `npm test` 53/53 lulus (7 file).
+- `supabase migration up --local` menerapkan migrasi.
+- Uji transaksi lokal: insert produk diskon persentase dan nominal berhasil; insert dengan `discount_type = 'percent'` dan `discount_value = 0` ditolak `check_violation`; semua di-`ROLLBACK`.

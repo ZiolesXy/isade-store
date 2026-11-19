@@ -106,6 +106,9 @@ export class SupabaseProductRepo implements IProductRepository {
       title: input.title,
       description: input.description,
       price: input.price,
+      original_price: input.originalPrice,
+      discount_type: input.discountType,
+      discount_value: input.discountValue,
       stock: input.stock,
       image_path: input.imagePath,
       is_active: input.isActive,
@@ -123,6 +126,9 @@ export class SupabaseProductRepo implements IProductRepository {
     if (input.title !== undefined) update.title = input.title;
     if (input.description !== undefined) update.description = input.description;
     if (input.price !== undefined) update.price = input.price;
+    if (input.originalPrice !== undefined) update.original_price = input.originalPrice;
+    if (input.discountType !== undefined) update.discount_type = input.discountType;
+    if (input.discountValue !== undefined) update.discount_value = input.discountValue;
     if (input.stock !== undefined) update.stock = input.stock;
     if (input.imagePath !== undefined) update.image_path = input.imagePath;
     if (input.isActive !== undefined) update.is_active = input.isActive;

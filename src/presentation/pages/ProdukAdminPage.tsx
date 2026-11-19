@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { PencilSimple, Plus } from '@phosphor-icons/react';
-import type { Product } from '@/domain/models/Product';
+import type { Product, ProductDiscountType } from '@/domain/models/Product';
 import { di } from '@/di';
 import { compressToWebp } from '@/lib/imageCompress';
 import { getProductImageUrl } from '@/lib/productImage';
 import { formatRupiah } from '@/lib/format';
+import { calculateFinalPrice, hasDiscount } from '@/lib/productPricing';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,20 +39,31 @@ import { toast } from 'sonner';
 const PAGE_SIZE = 10;
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+type DiscountChoice = 'none' | ProductDiscountType;
+
 interface FormState {
   slug: string;
   title: string;
   description: string;
-  price: string;
+  originalPrice: string;
+  discountType: DiscountChoice;
+  discountValue: string;
   stock: string;
   isActive: boolean;
+}
+
+/** FormState yang sudah lolos validasi, lengkap dengan harga jual final. */
+interface ValidatedForm extends FormState {
+  price: string;
 }
 
 const EMPTY_FORM: FormState = {
   slug: '',
   title: '',
   description: '',
-  price: '',
+  originalPrice: '',
+  discountType: 'none',
+  discountValue: '',
   stock: '0',
   isActive: true,
 };
@@ -124,7 +136,9 @@ export function ProdukAdminPage() {
       slug: product.slug,
       title: product.title,
       description: product.description,
-      price: String(product.price),
+      originalPrice: String(product.originalPrice ?? product.price),
+      discountType: product.discountType ?? 'none',
+      discountValue: product.discountValue != null ? String(product.discountValue) : '',
       stock: String(product.stock),
       isActive: product.isActive,
     });
@@ -135,10 +149,14 @@ export function ProdukAdminPage() {
     setDialogOpen(true);
   }
 
-  function validate(): FormState | null {
+  function validate(): ValidatedForm | null {
     const errors: Record<string, string> = {};
-    const price = Number(form.price);
+    const originalPrice = Number(form.originalPrice);
     const stock = Number(form.stock);
+    const activeDiscountType: ProductDiscountType | null =
+      form.discountType === 'none' ? null : form.discountType;
+    const hasDiscountInput = activeDiscountType !== null;
+    const discountValue = Number(form.discountValue);
 
     if (!SLUG_RE.test(form.slug)) {
       errors.slug = 'Slug pakai huruf kecil, angka, dan tanda hubung, misalnya: gantungan-kunci-bola.';
@@ -146,15 +164,40 @@ export function ProdukAdminPage() {
     if (form.title.trim().length === 0 || form.title.trim().length > 120) {
       errors.title = 'Judul wajib diisi, maksimal 120 karakter.';
     }
-    if (!Number.isInteger(price) || price <= 0) {
-      errors.price = 'Harga harus bilangan bulat di atas 0.';
+    if (!Number.isInteger(originalPrice) || originalPrice <= 0) {
+      errors.originalPrice = 'Harga asli harus bilangan bulat di atas 0.';
+    }
+    if (hasDiscountInput) {
+      if (form.discountType === 'percent') {
+        if (!Number.isInteger(discountValue) || discountValue < 1 || discountValue > 100) {
+          errors.discountValue = 'Potongan persentase harus bilangan bulat 1 sampai 100.';
+        }
+      } else if (!Number.isInteger(discountValue) || discountValue < 1) {
+        errors.discountValue = 'Potongan nominal harus bilangan bulat di atas 0.';
+      } else if (Number.isInteger(originalPrice) && discountValue >= originalPrice) {
+        errors.discountValue = 'Potongan harus lebih kecil dari harga asli.';
+      }
     }
     if (!Number.isInteger(stock) || stock < 0) {
       errors.stock = 'Stok harus bilangan bulat 0 atau lebih.';
     }
 
     setFieldErrors(errors);
-    return Object.keys(errors).length > 0 ? null : { ...form, price: String(price), stock: String(stock) };
+    if (Object.keys(errors).length > 0) return null;
+
+    const price = calculateFinalPrice(
+      originalPrice,
+      activeDiscountType,
+      hasDiscountInput ? discountValue : null
+    );
+
+    return {
+      ...form,
+      originalPrice: String(originalPrice),
+      discountValue: hasDiscountInput ? String(discountValue) : '',
+      price: String(price),
+      stock: String(stock),
+    };
   }
 
   async function handleSave() {
@@ -162,6 +205,14 @@ export function ProdukAdminPage() {
     if (!valid) return;
     setSaving(true);
     setFormError(null);
+
+    const discountType: ProductDiscountType | null =
+      valid.discountType === 'none' ? null : valid.discountType;
+    const discountFields = {
+      originalPrice: discountType ? Number(valid.originalPrice) : null,
+      discountType,
+      discountValue: discountType ? Number(valid.discountValue) : null,
+    };
 
     try {
       let productId: string;
@@ -171,6 +222,7 @@ export function ProdukAdminPage() {
           title: valid.title.trim(),
           description: valid.description,
           price: Number(valid.price),
+          ...discountFields,
           stock: Number(valid.stock),
           isActive: valid.isActive,
         });
@@ -181,6 +233,7 @@ export function ProdukAdminPage() {
           title: valid.title.trim(),
           description: valid.description,
           price: Number(valid.price),
+          ...discountFields,
           stock: Number(valid.stock),
           imagePath: null,
           isActive: valid.isActive,
@@ -216,6 +269,8 @@ export function ProdukAdminPage() {
         );
       } else if (supabaseError.code === '23505') {
         setFormError('Slug sudah dipakai produk lain. Pakai slug yang berbeda.');
+      } else if (supabaseError.code === '23514' && message.includes('discount')) {
+        setFormError('Potongan tidak valid. Periksa harga asli dan nilai potongan.');
       } else {
         setFormError('Produk tidak berhasil disimpan. Coba lagi.');
       }
@@ -243,6 +298,23 @@ export function ProdukAdminPage() {
 
   const maxLengthError =
     form.title.trim().length > 120 ? 'Judul maksimal 120 karakter.' : null;
+
+  const previewOriginalPrice = Number(form.originalPrice);
+  const previewDiscountValue = Number(form.discountValue);
+  const previewPrice =
+    Number.isInteger(previewOriginalPrice) && previewOriginalPrice > 0
+      ? calculateFinalPrice(
+          previewOriginalPrice,
+          form.discountType === 'none' ? null : form.discountType,
+          form.discountType !== 'none' && Number.isInteger(previewDiscountValue)
+            ? previewDiscountValue
+            : null
+        )
+      : null;
+  const previewDiscounted =
+    previewPrice != null &&
+    form.discountType !== 'none' &&
+    previewPrice < previewOriginalPrice;
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-6">
@@ -323,7 +395,14 @@ export function ProdukAdminPage() {
                       </Link>
                       <p className="font-mono text-xs text-muted-foreground">{product.slug}</p>
                     </TableCell>
-                    <TableCell className="text-right">{formatRupiah(product.price)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="font-medium">{formatRupiah(product.price)}</div>
+                      {hasDiscount(product) ? (
+                        <div className="text-xs text-muted-foreground line-through">
+                          {formatRupiah(product.originalPrice)}
+                        </div>
+                      ) : null}
+                    </TableCell>
                     <TableCell className="text-right">
                       {product.availableStock}
                       {product.lockedStock > 0 ? (
@@ -440,18 +519,18 @@ export function ProdukAdminPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="p-price">Harga (Rp)</Label>
+                <Label htmlFor="p-original-price">Harga Asli (Rp)</Label>
                 <Input
-                  id="p-price"
+                  id="p-original-price"
                   type="number"
                   min={1}
                   step={1}
-                  value={form.price}
-                  aria-invalid={!!fieldErrors.price}
-                  onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                  value={form.originalPrice}
+                  aria-invalid={!!fieldErrors.originalPrice}
+                  onChange={(e) => setForm((f) => ({ ...f, originalPrice: e.target.value }))}
                 />
-                {fieldErrors.price ? (
-                  <p className="text-xs text-destructive">{fieldErrors.price}</p>
+                {fieldErrors.originalPrice ? (
+                  <p className="text-xs text-destructive">{fieldErrors.originalPrice}</p>
                 ) : null}
               </div>
               <div className="flex flex-col gap-1.5">
@@ -470,6 +549,63 @@ export function ProdukAdminPage() {
                 ) : null}
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="p-discount-type">Potongan</Label>
+                <Select
+                  value={form.discountType}
+                  onValueChange={(value) =>
+                    setForm((f) => ({
+                      ...f,
+                      discountType: value as DiscountChoice,
+                      discountValue: value === 'none' ? '' : f.discountValue,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="p-discount-type" className="w-full bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Tanpa potongan</SelectItem>
+                    <SelectItem value="percent">Persentase (%)</SelectItem>
+                    <SelectItem value="fixed">Nominal tetap (Rp)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.discountType !== 'none' ? (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="p-discount-value">
+                    {form.discountType === 'percent' ? 'Potongan (%)' : 'Potongan (Rp)'}
+                  </Label>
+                  <Input
+                    id="p-discount-value"
+                    type="number"
+                    min={1}
+                    max={form.discountType === 'percent' ? 100 : undefined}
+                    step={1}
+                    value={form.discountValue}
+                    aria-invalid={!!fieldErrors.discountValue}
+                    onChange={(e) => setForm((f) => ({ ...f, discountValue: e.target.value }))}
+                  />
+                  {fieldErrors.discountValue ? (
+                    <p className="text-xs text-destructive">{fieldErrors.discountValue}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            {previewPrice != null ? (
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-md bg-muted/60 px-3 py-2 text-sm">
+                <span className="text-muted-foreground">Harga jual:</span>
+                <span className="font-semibold text-primary">{formatRupiah(previewPrice)}</span>
+                {previewDiscounted ? (
+                  <span className="text-xs text-muted-foreground line-through">
+                    {formatRupiah(previewOriginalPrice)}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="p-image">Gambar (JPG, PNG, atau WebP, maksimal 2 MB)</Label>
