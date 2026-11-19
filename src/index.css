@@ -76,6 +76,16 @@
     scroll-behavior: smooth;
   }
 
+  /* Semua kontrol yang bisa diklik memakai kursor pointer. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     margin: 0;

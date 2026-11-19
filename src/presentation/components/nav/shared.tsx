@@ -28,7 +28,10 @@ export function NavbarShell({
   return (
     <header className="sticky top-0 z-40 bg-primary">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4">
-        <Link to={brandTo} className="font-display text-lg font-bold text-white">
+        <Link
+          to={brandTo}
+          className="font-display text-lg font-bold text-white transition-opacity hover:opacity-80"
+        >
           Isade Store
         </Link>
         {left}

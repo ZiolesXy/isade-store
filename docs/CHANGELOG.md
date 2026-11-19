@@ -351,3 +351,24 @@ Status: selesai
 
 ### Catatan
 - Payload `payment_events` sengaja tidak dibuka ke user karena payload webhook Midtrans berisi `signature_key`; RPC hanya mengekspos catatan yang diperlukan.
+
+---
+
+## 2026-11-19 - Hover & kursor pointer untuk kontrol interaktif
+
+Status: selesai
+
+### Dikerjakan
+- Semua `Button`, tombol native, dan elemen `role="button"` memakai `cursor: pointer`; tombol disabled memakai `cursor: not-allowed`.
+- Select trigger, item select, dan tombol scroll select kini punya hover (sebelumnya hanya focus/warna gelap).
+- Tombol close dialog/sheet dapat hover background selain perubahan opacity.
+- Kartu produk: hover shadow, gambar zoom halus, judul berubah warna; thumbnail keranjang dan judul produk juga punya hover.
+- Brand navbar dan tab Masuk/Daftar di halaman login mendapat hover.
+
+### File utama yang berubah
+- `src/index.css`, `src/components/ui/{button,select,dialog,sheet}.tsx`
+- `src/presentation/components/ProductCard.tsx`, `src/presentation/components/nav/shared.tsx`
+- `src/presentation/pages/{CartPage,LoginPage}.tsx`
+
+### Bukti verifikasi
+- `npm run build` lulus; `npm test` 46/46 lulus.

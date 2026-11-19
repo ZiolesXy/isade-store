@@ -20,7 +20,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const lowStock = !outOfStock && product.availableStock <= LOW_STOCK_THRESHOLD;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border bg-card">
+    <div className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md">
       <Link
         to={`/katalog/${product.slug}`}
         className="block aspect-square w-full overflow-hidden bg-muted"
@@ -30,7 +30,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           <img
             src={imageUrl}
             alt={product.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
@@ -43,7 +43,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
       <div className="flex flex-1 flex-col gap-1 p-3">
         <Link
           to={`/katalog/${product.slug}`}
-          className="line-clamp-2 font-medium text-foreground hover:underline"
+          className="line-clamp-2 font-medium text-foreground transition-colors hover:text-primary hover:underline"
         >
           {product.title}
         </Link>

@@ -121,9 +121,11 @@ export function LoginPage() {
                   setFieldErrors({});
                 }}
                 className={cn(
-                  'flex-1 rounded-sm px-3 py-2 font-medium text-muted-foreground transition-colors',
+                  'flex-1 cursor-pointer rounded-sm px-3 py-2 font-medium transition-colors',
                   'focus-visible:outline-2 focus-visible:outline-ring',
-                  mode === tab.value && 'bg-white text-foreground shadow-xs'
+                  mode === tab.value
+                    ? 'bg-white text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:bg-white/70 hover:text-foreground'
                 )}
               >
                 {tab.label}
@@ -204,7 +206,7 @@ export function LoginPage() {
                       e.preventDefault();
                       setMode('register');
                     }}
-                    className="underline"
+                    className="underline transition-colors hover:text-primary"
                   >
                     Daftar
                   </Link>
@@ -218,7 +220,7 @@ export function LoginPage() {
                       e.preventDefault();
                       setMode('login');
                     }}
-                    className="underline"
+                    className="underline transition-colors hover:text-primary"
                   >
                     Masuk
                   </Link>

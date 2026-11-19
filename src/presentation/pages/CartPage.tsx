@@ -229,7 +229,7 @@ export function CartPage() {
                 <CardContent className="flex gap-3 p-3">
                   <Link
                     to={`/katalog/${item.slug}`}
-                    className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted"
+                    className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted transition-opacity hover:opacity-80"
                     aria-label={`Lihat ${item.title}`}
                   >
                     {getProductImageUrl(item.imagePath) ? (
@@ -248,7 +248,7 @@ export function CartPage() {
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <Link
                       to={`/katalog/${item.slug}`}
-                      className="line-clamp-1 font-medium hover:underline"
+                      className="line-clamp-1 font-medium transition-colors hover:text-primary hover:underline"
                     >
                       {item.title}
                     </Link>
