@@ -375,7 +375,7 @@ export function PaymentsReviewPage() {
                       <TableRow key={e.id}>
                         <TableCell>{e.source}</TableCell>
                         <TableCell>{e.transaction_status ?? '-'}</TableCell>
-                        <TableCell className="max-w-56 whitespace-pre-wrap break-words">
+                        <TableCell className="max-w-56 whitespace-pre-wrap wrap-break-words">
                           {e.catatan?.trim() || '-'}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
