@@ -1,5 +1,67 @@
--- -- Seed data untuk pengembangan lokal.
--- -- Semua produk contoh diberi judul berawalan [CONTOH] supaya tidak lolos ke production.
+-- -- 1) Auth user. Trigger on_auth_user_created otomatis membuat baris public.profiles.
+-- insert into auth.users (
+--   id, instance_id, aud, role, email, encrypted_password,
+--   email_confirmed_at, created_at, updated_at,
+--   raw_app_meta_data, raw_user_meta_data
+-- )
+-- values
+--   (
+--     'a0000000-0000-4000-8000-000000000001',
+--     '00000000-0000-0000-0000-000000000000',
+--     'authenticated',
+--     'authenticated',
+--     'admin@example.com',
+--     crypt('Password123!', gen_salt('bf')),
+--     now(), now(), now(),
+--     '{"provider":"email","providers":["email"]}'::jsonb,
+--     '{"full_name":"Admin Isade"}'::jsonb
+--   ),
+--   (
+--     'a0000000-0000-4000-8000-000000000002',
+--     '00000000-0000-0000-0000-000000000000',
+--     'authenticated',
+--     'authenticated',
+--     'user@example.com',
+--     crypt('Password123!', gen_salt('bf')),
+--     now(), now(), now(),
+--     '{"provider":"email","providers":["email"]}'::jsonb,
+--     '{"full_name":"User Contoh"}'::jsonb
+--   )
+-- on conflict (id) do nothing;
+
+-- -- 2) Identitas email agar akun bisa dikelola lewat Supabase Auth/Studio.
+-- insert into auth.identities (
+--   id, user_id, provider_id, provider, identity_data,
+--   last_sign_in_at, created_at, updated_at
+-- )
+-- values
+--   (
+--     'a0000000-0000-4000-8000-000000000001',
+--     'a0000000-0000-4000-8000-000000000001',
+--     'a0000000-0000-4000-8000-000000000001',
+--     'email',
+--     '{"sub":"a0000000-0000-4000-8000-000000000001","email":"admin@example.com","email_verified":true}'::jsonb,
+--     now(), now(), now()
+--   ),
+--   (
+--     'a0000000-0000-4000-8000-000000000002',
+--     'a0000000-0000-4000-8000-000000000002',
+--     'a0000000-0000-4000-8000-000000000002',
+--     'email',
+--     '{"sub":"a0000000-0000-4000-8000-000000000002","email":"user@example.com","email_verified":true}'::jsonb,
+--     now(), now(), now()
+--   )
+-- on conflict do nothing;
+
+-- -- 3) Tetapkan role. Upsert supaya aman bila seed dijalankan ulang.
+-- insert into public.profiles (id, full_name, role, is_active)
+-- values
+--   ('a0000000-0000-4000-8000-000000000001', 'Admin Isade', 'admin', true),
+--   ('a0000000-0000-4000-8000-000000000002', 'User Contoh', 'user', true)
+-- on conflict (id) do update
+--   set full_name = excluded.full_name,
+--       role = excluded.role,
+--       is_active = excluded.is_active;
 
 -- insert into public.products (slug, title, description, price, stock, locked_stock, image_path, is_active)
 -- values
